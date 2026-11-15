@@ -1,4 +1,4 @@
-# Servis360 - Araç Bakım & Müşteri Takip Sistemi
+# Servis365 - Araç Bakım & Müşteri Takip Sistemi
 
 Masaüstü için optimize edilmiş, offline-first (cihaz hafızasında çalışan), yüksek performanslı oto servis ve müşteri yönetim uygulaması.
 

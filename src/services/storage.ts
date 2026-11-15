@@ -12,15 +12,15 @@ import type {
 } from '../types/index.ts';
 
 const STORAGE_KEYS = {
-  CUSTOMERS: 'servis360_customers',
-  VEHICLES: 'servis360_vehicles',
-  SERVICE_RECORDS: 'servis360_service_records',
-  REMINDERS: 'servis360_reminders',
-  SETTINGS: 'servis360_settings',
-  STOCK_ITEMS: 'servis360_stock_items',
-  PACKAGES: 'servis360_packages',
-  TECHNICIANS: 'servis360_technicians',
-  CASH_TRANSACTIONS: 'servis360_cash_transactions',
+  CUSTOMERS: 'servis365_customers',
+  VEHICLES: 'servis365_vehicles',
+  SERVICE_RECORDS: 'servis365_service_records',
+  REMINDERS: 'servis365_reminders',
+  SETTINGS: 'servis365_settings',
+  STOCK_ITEMS: 'servis365_stock_items',
+  PACKAGES: 'servis365_packages',
+  TECHNICIANS: 'servis365_technicians',
+  CASH_TRANSACTIONS: 'servis365_cash_transactions',
 };
 
 export const defaultSettings: ShopSettings = {
@@ -436,6 +436,25 @@ const initialCashTransactions: CashTransaction[] = [
 
 class StorageService {
   private initStorage() {
+    // Migration: Copy legacy servis360 data if exists and servis365 not yet set
+    const legacyKeys: [string, string][] = [
+      ['servis360_customers', STORAGE_KEYS.CUSTOMERS],
+      ['servis360_vehicles', STORAGE_KEYS.VEHICLES],
+      ['servis360_service_records', STORAGE_KEYS.SERVICE_RECORDS],
+      ['servis360_reminders', STORAGE_KEYS.REMINDERS],
+      ['servis360_settings', STORAGE_KEYS.SETTINGS],
+      ['servis360_stock_items', STORAGE_KEYS.STOCK_ITEMS],
+      ['servis360_packages', STORAGE_KEYS.PACKAGES],
+      ['servis360_technicians', STORAGE_KEYS.TECHNICIANS],
+      ['servis360_cash_transactions', STORAGE_KEYS.CASH_TRANSACTIONS],
+    ];
+    for (const [oldKey, newKey] of legacyKeys) {
+      const oldVal = localStorage.getItem(oldKey);
+      if (oldVal && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, oldVal);
+      }
+    }
+
     if (!localStorage.getItem(STORAGE_KEYS.CUSTOMERS)) {
       localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(initialCustomers));
     }

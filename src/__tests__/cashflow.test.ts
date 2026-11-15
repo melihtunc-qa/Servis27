@@ -113,7 +113,7 @@ describe('Cash Flow & Register Transactions Tests', () => {
           description: 'Kira',
         },
       ];
-      localStorage.setItem('servis360_cash_transactions', JSON.stringify(initialData));
+      localStorage.setItem('servis365_cash_transactions', JSON.stringify(initialData));
 
       const stats = storage.getDashboardStats();
       assert.equal(stats.totalIncome, 10000);
