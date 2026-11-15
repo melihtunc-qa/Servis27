@@ -327,7 +327,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                   <th className="py-3.5 px-4">Müşteri</th>
                   <th className="py-3.5 px-4">KM</th>
                   <th className="py-3.5 px-4">Şikayet / İşlem</th>
-                  <th className="py-3.5 px-4">Durum</th>
+                  <th className="py-3.5 px-4 min-w-[145px] whitespace-nowrap">Durum</th>
                   <th className="py-3.5 px-4">Tutar / Ödeme</th>
                   <th className="py-3.5 px-4 text-right">İşlem</th>
                 </tr>
@@ -372,8 +372,8 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                         <td className="py-3.5 px-4 text-xs text-slate-300 max-w-xs truncate">
                           {rec.complaint}
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full ${
+                        <td className="py-3.5 px-4 min-w-[145px] whitespace-nowrap">
+                          <span className={`px-3 py-1 text-[11px] font-semibold rounded-full whitespace-nowrap inline-block ${
                             rec.status === 'ISLEMDE' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                             rec.status === 'TAMAMLANDI' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                             rec.status === 'TESLIM_EDILDI' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :

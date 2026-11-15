@@ -53,15 +53,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const getStatusBadge = (status: ServiceRecord['status']) => {
     switch (status) {
       case 'KABUL_EDILDI':
-        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700 text-slate-200">Kabul Edildi</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-700 text-slate-200 whitespace-nowrap inline-block text-center">Kabul Edildi</span>;
       case 'ISLEMDE':
-        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse">İşlemde</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse whitespace-nowrap inline-block text-center">İşlemde</span>;
       case 'PARCA_BEKLENIYOR':
-        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">Parça Bekleniyor</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap inline-block text-center">Parça Bekleniyor</span>;
       case 'TAMAMLANDI':
-        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Tamamlandı</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap inline-block text-center">Tamamlandı</span>;
       case 'TESLIM_EDILDI':
-        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Teslim Edildi</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 whitespace-nowrap inline-block text-center">Teslim Edildi</span>;
       default:
         return null;
     }
@@ -180,7 +180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <th className="py-3 px-3 rounded-l-lg">Plaka / Araç</th>
                   <th className="py-3 px-3">Müşteri</th>
                   <th className="py-3 px-3">İşlem / Şikayet</th>
-                  <th className="py-3 px-3">Durum</th>
+                  <th className="py-3 px-3.5 min-w-[145px] whitespace-nowrap">Durum</th>
                   <th className="py-3 px-3">Tutar</th>
                   <th className="py-3 px-3 text-right rounded-r-lg">Eylem</th>
                 </tr>
@@ -214,7 +214,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <td className="py-3 px-3 text-slate-300 max-w-xs truncate">
                           {record.complaint}
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-3 px-3.5 min-w-[145px] whitespace-nowrap">
                           {getStatusBadge(record.status)}
                         </td>
                         <td className="py-3 px-3 font-semibold text-slate-100">
