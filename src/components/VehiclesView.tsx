@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Car, 
   Search, 
@@ -20,6 +20,8 @@ interface VehiclesViewProps {
   onOpenServiceDetail: (record: ServiceRecord) => void;
   selectedVehicleForDetail?: Vehicle | null;
   onClearSelectedVehicle?: () => void;
+  searchFilterQuery?: string;
+  onClearSearchFilter?: () => void;
 }
 
 export const VehiclesView: React.FC<VehiclesViewProps> = ({
@@ -27,12 +29,28 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   onOpenServiceDetail,
   selectedVehicleForDetail,
   onClearSelectedVehicle,
+  searchFilterQuery,
+  onClearSearchFilter,
 }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers] = useState<Customer[]>(() => storage.getCustomers());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchFilterQuery || '');
   const [activeVehicle, setActiveVehicle] = useState<Vehicle | null>(selectedVehicleForDetail || null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Sync external search query (from sidebar or quick search)
+  useEffect(() => {
+    if (searchFilterQuery !== undefined) {
+      setSearchTerm(searchFilterQuery);
+    }
+  }, [searchFilterQuery]);
+
+  // Sync external selected vehicle
+  useEffect(() => {
+    if (selectedVehicleForDetail) {
+      setActiveVehicle(selectedVehicleForDetail);
+    }
+  }, [selectedVehicleForDetail]);
 
   // New vehicle form state
   const [formData, setFormData] = useState({
@@ -59,13 +77,19 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
 
   const filteredVehicles = vehicles.filter(v => {
     const customer = getCustomer(v.customerId);
-    const search = searchTerm.toLowerCase();
-    return (
-      v.plate.toLowerCase().includes(search) ||
-      v.brand.toLowerCase().includes(search) ||
-      v.model.toLowerCase().includes(search) ||
-      (customer && customer.fullName.toLowerCase().includes(search))
-    );
+    const searchRaw = searchTerm.trim().toLowerCase();
+    if (!searchRaw) return true;
+
+    // Plaka contain / parça arama (boşlukları temizleyerek 'vr', '87', '26' gibi parçaları yakalar)
+    const cleanPlate = v.plate.replace(/\s+/g, '').toLowerCase();
+    const cleanSearch = searchRaw.replace(/\s+/g, '');
+    const matchesPlate = cleanPlate.includes(cleanSearch);
+
+    const matchesBrand = v.brand.toLowerCase().includes(searchRaw);
+    const matchesModel = v.model.toLowerCase().includes(searchRaw);
+    const matchesCustomer = customer ? customer.fullName.toLowerCase().includes(searchRaw) : false;
+
+    return matchesPlate || matchesBrand || matchesModel || matchesCustomer;
   });
 
   const handleCreateVehicle = (e: React.FormEvent) => {
@@ -131,15 +155,46 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="relative">
-        <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          placeholder="Plaka (örn: 34VR4821), marka, model veya müşteri adı ile ara..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
-        />
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Plaka (örn: 34VR, VR, 87, 26), marka, model veya müşteri adı ile ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                if (onClearSearchFilter) onClearSearchFilter();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              title="Aramayı Temizle"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {searchTerm && (
+          <div className="flex items-center justify-between text-xs px-2 text-slate-400">
+            <span>
+              <strong className="text-blue-400">"{searchTerm}"</strong> içeriği için arama sonuçları ({filteredVehicles.length} araç bulundu)
+            </span>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                if (onClearSearchFilter) onClearSearchFilter();
+              }}
+              className="text-blue-400 hover:underline font-medium"
+            >
+              Filtreyi Temizle
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Layout: Left Vehicle Grid, Right Active Vehicle Detail */}

@@ -245,6 +245,20 @@ const initialVehicles: Vehicle[] = [
     notes: 'Bakım zamanı yaklaşıyor.',
     createdAt: '2026-02-20T14:20:00Z',
   },
+  {
+    id: 'veh-4',
+    customerId: 'cust-1',
+    plate: '34VR8726',
+    brand: 'Fiat',
+    model: 'Egea 1.3 MultiJet',
+    year: 2022,
+    currentKm: 76000,
+    vin: 'NM435600001234567',
+    fuelType: 'Dizel',
+    color: 'Kurşun Gri',
+    notes: 'Filo aracı, periyodik bakım takibi.',
+    createdAt: '2026-03-01T12:00:00Z',
+  },
 ];
 
 // Initial Service Records
@@ -527,8 +541,21 @@ class StorageService {
   }
 
   getVehicleByPlate(plate: string): Vehicle | undefined {
-    const clean = plate.replace(/\s+/g, '').toUpperCase();
-    return this.getVehicles().find(v => v.plate.replace(/\s+/g, '').toUpperCase() === clean);
+    const clean = (plate || '').replace(/\s+/g, '').toUpperCase();
+    if (!clean) return undefined;
+    const exact = this.getVehicles().find(v => v.plate.replace(/\s+/g, '').toUpperCase() === clean);
+    if (exact) return exact;
+    // Fallback: If no exact match, but contains match has exactly 1 result
+    const partials = this.searchVehiclesByPlate(clean);
+    return partials.length === 1 ? partials[0] : undefined;
+  }
+
+  searchVehiclesByPlate(plateQuery: string): Vehicle[] {
+    const clean = (plateQuery || '').replace(/\s+/g, '').toUpperCase();
+    if (!clean) return this.getVehicles();
+    return this.getVehicles().filter(v => 
+      v.plate.replace(/\s+/g, '').toUpperCase().includes(clean)
+    );
   }
 
   getVehiclesByCustomer(customerId: string): Vehicle[] {

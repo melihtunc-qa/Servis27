@@ -15,6 +15,7 @@ import { Vehicle, ServiceRecord } from './types';
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [quickSearchPlate, setQuickSearchPlate] = useState('');
+  const [vehicleSearchFilter, setVehicleSearchFilter] = useState('');
   const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false);
   const [preSelectedVehicle, setPreSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState<Vehicle | null>(null);
@@ -28,15 +29,24 @@ export const App: React.FC = () => {
   const lowStock = storage.getLowStockItems();
 
   const handleQuickPlateSearch = () => {
-    if (!quickSearchPlate.trim()) return;
-    const vehicle = storage.getVehicleByPlate(quickSearchPlate);
-    if (vehicle) {
-      setSelectedVehicleForDetail(vehicle);
+    const query = quickSearchPlate.trim();
+    if (!query) {
+      setVehicleSearchFilter('');
       setCurrentTab('vehicles');
-    } else {
-      alert(`"${quickSearchPlate.toUpperCase()}" plakalı araç bulunamadı. Yeni bir araç kaydı açabilirsiniz.`);
-      setCurrentTab('vehicles');
+      return;
     }
+
+    const matches = storage.searchVehiclesByPlate(query);
+    setVehicleSearchFilter(query);
+
+    if (matches.length === 1) {
+      // Tek bir araç tam veya kısmi eşleştiyse doğrudan onun detayını aç
+      setSelectedVehicleForDetail(matches[0]);
+    } else {
+      // Birden fazla veya 0 araç eşleştiyse detay çekmecesini temizle ki kullanıcı tüm listeyi görsün
+      setSelectedVehicleForDetail(null);
+    }
+    setCurrentTab('vehicles');
   };
 
   const handleOpenNewService = (vehicle?: Vehicle) => {
@@ -66,13 +76,17 @@ export const App: React.FC = () => {
         currentTab={currentTab}
         onSelectTab={(tab) => {
           setCurrentTab(tab);
-          if (tab !== 'vehicles') setSelectedVehicleForDetail(null);
+          if (tab !== 'vehicles') {
+            setSelectedVehicleForDetail(null);
+            setVehicleSearchFilter('');
+          }
           if (tab !== 'services') setSelectedRecordForDetail(null);
         }}
         onOpenNewService={() => handleOpenNewService()}
         quickSearchPlate={quickSearchPlate}
         setQuickSearchPlate={setQuickSearchPlate}
         onQuickSearch={handleQuickPlateSearch}
+        onSelectVehicle={handleSelectVehicle}
         reminderCount={reminders.length}
         activeServiceCount={activeServices.length}
         lowStockCount={lowStock.length}
@@ -94,6 +108,8 @@ export const App: React.FC = () => {
             onOpenServiceDetail={handleOpenServiceDetail}
             selectedVehicleForDetail={selectedVehicleForDetail}
             onClearSelectedVehicle={() => setSelectedVehicleForDetail(null)}
+            searchFilterQuery={vehicleSearchFilter}
+            onClearSearchFilter={() => setVehicleSearchFilter('')}
           />
         )}
 

@@ -105,11 +105,28 @@ describe('Plate Normalization & Search Tests', () => {
         { id: 'v1', customerId: 'c1', plate: '34VR4821', brand: 'VW', model: 'Passat', year: 2018, currentKm: 140000, fuelType: 'Dizel', createdAt: '' },
         { id: 'v2', customerId: 'c2', plate: '34ABC789', brand: 'Renault', model: 'Megane', year: 2020, currentKm: 80000, fuelType: 'Dizel', createdAt: '' },
         { id: 'v3', customerId: 'c3', plate: '06FS5522', brand: 'Toyota', model: 'Corolla', year: 2021, currentKm: 50000, fuelType: 'Hibrit', createdAt: '' },
+        { id: 'v4', customerId: 'c1', plate: '34VR8726', brand: 'Fiat', model: 'Egea', year: 2022, currentKm: 76000, fuelType: 'Dizel', createdAt: '' },
       ];
 
-      // Query '34' should return 2 vehicles
+      // Query '34' should return 3 vehicles (v1, v2, v4)
       const result34 = mockVehicles.filter(v => matchPlateSearch(v.plate, '34'));
-      assert.equal(result34.length, 2);
+      assert.equal(result34.length, 3);
+
+      // Query 'vr' should return 2 vehicles ('34VR4821' and '34VR8726')
+      const resultVR = mockVehicles.filter(v => matchPlateSearch(v.plate, 'vr'));
+      assert.equal(resultVR.length, 2);
+      assert.ok(resultVR.some(v => v.plate === '34VR4821'));
+      assert.ok(resultVR.some(v => v.plate === '34VR8726'));
+
+      // Query '87' should return '34VR8726'
+      const result87 = mockVehicles.filter(v => matchPlateSearch(v.plate, '87'));
+      assert.equal(result87.length, 1);
+      assert.equal(result87[0].plate, '34VR8726');
+
+      // Query '26' should return '34VR8726'
+      const result26 = mockVehicles.filter(v => matchPlateSearch(v.plate, '26'));
+      assert.equal(result26.length, 1);
+      assert.equal(result26[0].plate, '34VR8726');
 
       // Query 'fs' should return 1 vehicle ('06FS5522')
       const resultFS = mockVehicles.filter(v => matchPlateSearch(v.plate, 'fs'));
@@ -119,6 +136,21 @@ describe('Plate Normalization & Search Tests', () => {
       // Query 'xyz' should return empty array
       const resultNone = mockVehicles.filter(v => matchPlateSearch(v.plate, 'xyz'));
       assert.equal(resultNone.length, 0);
+    });
+
+    it('should support searchVehiclesByPlate contain/substring queries from storage', () => {
+      // Searching 'VR' in storage
+      const vrMatches = storage.searchVehiclesByPlate('VR');
+      assert.ok(vrMatches.length >= 2, 'Should find at least 2 vehicles with VR');
+      assert.ok(vrMatches.some(v => v.plate.includes('VR')));
+
+      // Searching '87'
+      const matches87 = storage.searchVehiclesByPlate('87');
+      assert.ok(matches87.some(v => v.plate.includes('87')));
+
+      // Searching '26'
+      const matches26 = storage.searchVehiclesByPlate('26');
+      assert.ok(matches26.some(v => v.plate.includes('26')));
     });
   });
 });

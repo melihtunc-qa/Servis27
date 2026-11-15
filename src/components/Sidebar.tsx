@@ -12,6 +12,8 @@ import {
   Package,
   Wallet
 } from 'lucide-react';
+import { storage } from '../services/storage';
+import { Vehicle } from '../types';
 
 export type NavTab = 'dashboard' | 'vehicles' | 'customers' | 'services' | 'inventory' | 'cashflow' | 'reminders' | 'settings';
 
@@ -22,6 +24,7 @@ interface SidebarProps {
   quickSearchPlate: string;
   setQuickSearchPlate: (val: string) => void;
   onQuickSearch: () => void;
+  onSelectVehicle?: (vehicle: Vehicle) => void;
   reminderCount: number;
   activeServiceCount: number;
   lowStockCount: number;
@@ -34,10 +37,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   quickSearchPlate,
   setQuickSearchPlate,
   onQuickSearch,
+  onSelectVehicle,
   reminderCount,
   activeServiceCount,
   lowStockCount,
 }) => {
+  const liveMatches = quickSearchPlate.trim()
+    ? storage.searchVehiclesByPlate(quickSearchPlate).slice(0, 5)
+    : [];
   const menuItems = [
     { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
     { id: 'vehicles', label: 'Araçlar & Plaka', icon: Car },
@@ -87,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Quick Plate Search Widget */}
-      <div className="p-3 border-b border-slate-800 bg-slate-950/40">
+      <div className="p-3 border-b border-slate-800 bg-slate-950/40 relative">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
           <Search className="w-3.5 h-3.5 text-blue-400" />
           Hızlı Plaka Arama
@@ -95,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex gap-1.5">
           <input
             type="text"
-            placeholder="34VR4821"
+            placeholder="Örn: VR, 87, 26..."
             value={quickSearchPlate}
             onChange={(e) => setQuickSearchPlate(e.target.value.toUpperCase())}
             onKeyDown={handleSearchKeyDown}
@@ -109,6 +116,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Bul
           </button>
         </div>
+
+        {/* Live Matching Dropdown */}
+        {quickSearchPlate.trim() && (
+          <div className="mt-2 bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl z-20">
+            <div className="p-1.5 bg-slate-950 text-[10px] uppercase font-bold text-slate-400 flex justify-between items-center border-b border-slate-800">
+              <span>Eşleşenler ({liveMatches.length})</span>
+              <span className="text-[9px] text-blue-400">Tümü için 'Bul'</span>
+            </div>
+            {liveMatches.length === 0 ? (
+              <div className="p-2.5 text-[11px] text-slate-500 text-center">
+                Eşleşen plaka yok
+              </div>
+            ) : (
+              liveMatches.map((veh) => (
+                <button
+                  key={veh.id}
+                  onClick={() => {
+                    if (onSelectVehicle) onSelectVehicle(veh);
+                    setQuickSearchPlate('');
+                  }}
+                  className="w-full text-left px-2.5 py-2 hover:bg-blue-600/20 text-xs flex items-center justify-between transition border-b border-slate-800/60 last:border-none group"
+                >
+                  <span className="font-mono font-bold text-blue-400 group-hover:text-blue-300">
+                    {veh.plate}
+                  </span>
+                  <span className="text-[11px] text-slate-400 truncate max-w-[100px]">
+                    {veh.brand} {veh.model}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Primary Action Button */}

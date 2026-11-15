@@ -44,3 +44,12 @@ export function matchPlateSearch(plate: string | null | undefined, query: string
   if (!normQuery) return true;
   return normPlate.includes(normQuery);
 }
+
+/**
+ * Araç listesini plaka içerik (contains) aramasına göre filtreler.
+ */
+export function filterVehiclesByPlateQuery<T extends { plate: string }>(vehicles: T[], query: string | null | undefined): T[] {
+  if (!query || !query.trim()) return vehicles;
+  const cleanQuery = normalizePlate(query);
+  return vehicles.filter(v => normalizePlate(v.plate).includes(cleanQuery));
+}
