@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex gap-1.5">
           <input
             type="text"
-            placeholder="Örn: VR, 87, 26..."
+            placeholder="Plaka ara..."
             value={quickSearchPlate}
             onChange={(e) => setQuickSearchPlate(e.target.value.toUpperCase())}
             onKeyDown={handleSearchKeyDown}

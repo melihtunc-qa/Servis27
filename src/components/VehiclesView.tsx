@@ -171,7 +171,7 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
           <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Plaka (örn: 34VR, VR, 87, 26), marka, model veya müşteri adı ile ara..."
+            placeholder="Plaka, marka, model veya müşteri adı ile ara..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
