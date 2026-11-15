@@ -33,10 +33,17 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   onClearSearchFilter,
 }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
-  const [customers] = useState<Customer[]>(() => storage.getCustomers());
+  const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
   const [searchTerm, setSearchTerm] = useState(searchFilterQuery || '');
   const [activeVehicle, setActiveVehicle] = useState<Vehicle | null>(selectedVehicleForDetail || null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      setVehicles(storage.getVehicles());
+      setCustomers(storage.getCustomers());
+    });
+  }, []);
 
   // Sync external search query (from sidebar or quick search)
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
 import { VehiclesView } from './components/VehiclesView';
@@ -20,6 +20,13 @@ export const App: React.FC = () => {
   const [preSelectedVehicle, setPreSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState<Vehicle | null>(null);
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<ServiceRecord | null>(null);
+  const [, setStorageVersion] = useState(0);
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      setStorageVersion(v => v + 1);
+    });
+  }, []);
 
   // Stats for badge
   const reminders = storage.getReminders().filter(r => r.status === 'YAKLASAN');

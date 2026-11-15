@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wrench, 
   Search, 
@@ -38,6 +38,12 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
   const refreshRecords = () => {
     setRecords(storage.getServiceRecords());
   };
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      refreshRecords();
+    });
+  }, []);
 
   const getVehicle = (vehicleId: string) => vehicles.find(v => v.id === vehicleId);
   const getCustomer = (customerId: string) => customers.find(c => c.id === customerId);

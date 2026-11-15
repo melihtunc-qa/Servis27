@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package,
   Search, 
@@ -35,6 +35,12 @@ export const InventoryView: React.FC = () => {
   const refreshItems = () => {
     setStockItems(storage.getStockItems());
   };
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      refreshItems();
+    });
+  }, []);
 
   const filteredItems = stockItems.filter(item => {
     const search = searchTerm.toLowerCase();

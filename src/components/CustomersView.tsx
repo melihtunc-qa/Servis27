@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Search, 
@@ -22,10 +22,17 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   onSelectVehicle,
 }) => {
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
-  const [vehicles] = useState<Vehicle[]>(() => storage.getVehicles());
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      setCustomers(storage.getCustomers());
+      setVehicles(storage.getVehicles());
+    });
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({

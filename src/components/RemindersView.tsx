@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, 
   MessageCircle, 
@@ -33,6 +33,12 @@ export const RemindersView: React.FC = () => {
   const refreshReminders = () => {
     setReminders(storage.getReminders());
   };
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      refreshReminders();
+    });
+  }, []);
 
   const getVehicle = (id: string) => vehicles.find(v => v.id === id);
   const getCustomer = (id: string) => customers.find(c => c.id === id);

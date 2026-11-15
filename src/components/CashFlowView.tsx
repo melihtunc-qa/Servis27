@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wallet, 
   TrendingUp, 
@@ -32,6 +32,12 @@ export const CashFlowView: React.FC = () => {
   const refreshTransactions = () => {
     setTransactions(storage.getCashTransactions());
   };
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      refreshTransactions();
+    });
+  }, []);
 
   const totalIncome = transactions.filter(t => t.type === 'GELIR').reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'GIDER').reduce((s, t) => s + t.amount, 0);

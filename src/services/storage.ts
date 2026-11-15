@@ -448,7 +448,28 @@ const initialCashTransactions: CashTransaction[] = [
   },
 ];
 
+type StorageListener = () => void;
+
 class StorageService {
+  private listeners: Set<StorageListener> = new Set();
+
+  subscribe(listener: StorageListener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  notifyListeners(): void {
+    this.listeners.forEach(fn => {
+      try {
+        fn();
+      } catch (err) {
+        console.error('Storage listener error:', err);
+      }
+    });
+  }
+
   private initStorage() {
     // Migration: Copy legacy servis360 data if exists and servis365 not yet set
     const legacyKeys: [string, string][] = [
@@ -500,6 +521,11 @@ class StorageService {
 
   constructor() {
     this.initStorage();
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('storage', () => {
+        this.notifyListeners();
+      });
+    }
   }
 
   // --- Customers ---
@@ -521,12 +547,14 @@ class StorageService {
       list.unshift(customer);
     }
     localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(list));
+    this.notifyListeners();
     return customer;
   }
 
   deleteCustomer(id: string): boolean {
     const list = this.getCustomers().filter(c => c.id !== id);
     localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(list));
+    this.notifyListeners();
     return true;
   }
 
@@ -572,12 +600,14 @@ class StorageService {
       list.unshift(vehicle);
     }
     localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(list));
+    this.notifyListeners();
     return vehicle;
   }
 
   deleteVehicle(id: string): boolean {
     const list = this.getVehicles().filter(v => v.id !== id);
     localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(list));
+    this.notifyListeners();
     return true;
   }
 
@@ -593,6 +623,7 @@ class StorageService {
     if (index >= 0) list[index] = tech;
     else list.push(tech);
     localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify(list));
+    this.notifyListeners();
     return tech;
   }
 
@@ -608,6 +639,7 @@ class StorageService {
     if (index >= 0) list[index] = pkg;
     else list.push(pkg);
     localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(list));
+    this.notifyListeners();
     return pkg;
   }
 
@@ -628,12 +660,14 @@ class StorageService {
     if (index >= 0) list[index] = item;
     else list.unshift(item);
     localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(list));
+    this.notifyListeners();
     return item;
   }
 
   deleteStockItem(id: string): boolean {
     const list = this.getStockItems().filter(s => s.id !== id);
     localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(list));
+    this.notifyListeners();
     return true;
   }
 
@@ -648,6 +682,7 @@ class StorageService {
       item.quantity = Math.max(0, item.quantity - quantityToDeduct);
       item.updatedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(list));
+      this.notifyListeners();
     }
   }
 
@@ -663,12 +698,14 @@ class StorageService {
     if (index >= 0) list[index] = tx;
     else list.unshift(tx);
     localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(list));
+    this.notifyListeners();
     return tx;
   }
 
   deleteCashTransaction(id: string): boolean {
     const list = this.getCashTransactions().filter(t => t.id !== id);
     localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(list));
+    this.notifyListeners();
     return true;
   }
 
@@ -747,6 +784,7 @@ class StorageService {
     // Generate automatic maintenance reminder
     this.createAutomaticReminderForRecord(record);
 
+    this.notifyListeners();
     return record;
   }
 
@@ -790,12 +828,14 @@ class StorageService {
       list.unshift(reminder);
     }
     localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(list));
+    this.notifyListeners();
     return reminder;
   }
 
   deleteReminder(id: string): boolean {
     const list = this.getReminders().filter(r => r.id !== id);
     localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(list));
+    this.notifyListeners();
     return true;
   }
 
@@ -807,6 +847,7 @@ class StorageService {
 
   saveSettings(settings: ShopSettings): ShopSettings {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    this.notifyListeners();
     return settings;
   }
 
@@ -853,6 +894,7 @@ class StorageService {
         if (data.technicians) localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify(data.technicians));
         if (data.cashTransactions) localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(data.cashTransactions));
         if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
+        this.notifyListeners();
         return true;
       }
       return false;
