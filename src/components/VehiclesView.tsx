@@ -10,7 +10,8 @@ import {
   Fuel, 
   Wrench,
   X,
-  FileText
+  FileText,
+  ChevronRight
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Vehicle, Customer, FuelType, ServiceRecord } from '../types';
@@ -22,6 +23,7 @@ interface VehiclesViewProps {
   onClearSelectedVehicle?: () => void;
   searchFilterQuery?: string;
   onClearSearchFilter?: () => void;
+  onSelectCustomer?: (customer: Customer) => void;
 }
 
 export const VehiclesView: React.FC<VehiclesViewProps> = ({
@@ -31,6 +33,7 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   onClearSelectedVehicle,
   searchFilterQuery,
   onClearSearchFilter,
+  onSelectCustomer,
 }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
@@ -143,6 +146,7 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   };
 
   const activeVehicleRecords = activeVehicle ? storage.getRecordsByVehicle(activeVehicle.id) : [];
+  const activeCustomer = activeVehicle ? getCustomer(activeVehicle.customerId) : null;
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -248,15 +252,28 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
 
                     <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                       <span className="flex items-center gap-1.5 truncate">
-                        <User className="w-3.5 h-3.5 text-slate-500" />
-                        {customer?.fullName || 'Sahibi Yok'}
+                        <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        {customer ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectCustomer) onSelectCustomer(customer);
+                            }}
+                            className="hover:text-blue-400 hover:underline transition truncate text-left font-medium"
+                            title="Müşteri Detayına Git"
+                          >
+                            {customer.fullName}
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">Sahibi Yok</span>
+                        )}
                       </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onOpenNewServiceForVehicle(veh);
                         }}
-                        className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 p-1 hover:bg-blue-600/10 rounded transition"
+                        className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 p-1 hover:bg-blue-600/10 rounded transition shrink-0"
                       >
                         <Wrench className="w-3.5 h-3.5" />
                         İş Emri Aç
@@ -315,6 +332,46 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Customer Link Card */}
+              {activeCustomer && (
+                <div className="py-2.5 border-b border-slate-800">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      <User className="w-3 h-3 text-blue-400" />
+                      Araç Sahibi / Müşteri
+                    </span>
+                    <button
+                      onClick={() => onSelectCustomer && onSelectCustomer(activeCustomer)}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 font-medium flex items-center gap-0.5 hover:underline"
+                    >
+                      Müşteri Detayı <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onSelectCustomer && onSelectCustomer(activeCustomer)}
+                    className="w-full text-left p-2.5 rounded-xl bg-slate-950/80 hover:bg-blue-600/10 border border-slate-800 hover:border-blue-500/40 transition group flex items-center justify-between"
+                  >
+                    <div>
+                      <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition flex items-center gap-1.5">
+                        {activeCustomer.fullName}
+                      </h4>
+                      <p className="text-xs font-mono text-slate-400 mt-0.5">
+                        {activeCustomer.phone}
+                      </p>
+                    </div>
+                    {activeCustomer.balance > 0 ? (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">
+                        ₺{activeCustomer.balance.toLocaleString('tr-TR')} Borç
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                        Bakiye Temiz
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Action Button */}
               <div className="py-3">

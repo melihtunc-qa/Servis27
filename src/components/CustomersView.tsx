@@ -9,23 +9,37 @@ import {
   Car, 
   MessageCircle, 
   X,
-  CreditCard
+  CreditCard,
+  Edit2,
+  History,
+  ArrowRight,
+  Wrench,
+  Calendar,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { storage } from '../services/storage';
-import { Customer, Vehicle } from '../types';
+import { Customer, Vehicle, ServiceRecord } from '../types';
 
 interface CustomersViewProps {
   onSelectVehicle: (vehicle: Vehicle) => void;
+  onOpenServiceDetail?: (record: ServiceRecord) => void;
+  selectedCustomerForDetail?: Customer | null;
+  onClearSelectedCustomer?: () => void;
 }
 
 export const CustomersView: React.FC<CustomersViewProps> = ({
   onSelectVehicle,
+  onOpenServiceDetail,
+  selectedCustomerForDetail,
+  onClearSelectedCustomer,
 }) => {
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [activeCustomerDetail, setActiveCustomerDetail] = useState<Customer | null>(selectedCustomerForDetail || null);
 
   useEffect(() => {
     return storage.subscribe(() => {
@@ -33,6 +47,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setVehicles(storage.getVehicles());
     });
   }, []);
+
+  // Sync external selected customer (e.g. from VehiclesView)
+  useEffect(() => {
+    if (selectedCustomerForDetail) {
+      setActiveCustomerDetail(selectedCustomerForDetail);
+    }
+  }, [selectedCustomerForDetail]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -164,9 +185,15 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               >
                 <div>
                   {/* Card Header */}
-                  <div className="flex items-start justify-between">
+                  <div 
+                    onClick={() => setActiveCustomerDetail(cust)}
+                    className="flex items-start justify-between cursor-pointer group"
+                    title="Müşteri detaylarını ve hesap geçmişini gör"
+                  >
                     <div>
-                      <h3 className="font-bold text-white text-base">{cust.fullName}</h3>
+                      <h3 className="font-bold text-white text-base group-hover:text-blue-400 transition">
+                        {cust.fullName}
+                      </h3>
                       <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
                         <Phone className="w-3.5 h-3.5 text-slate-500" />
                         <span className="font-mono">{cust.phone}</span>
@@ -222,8 +249,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 {/* Card Actions */}
                 <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
                   <button
+                    onClick={() => setActiveCustomerDetail(cust)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl text-xs font-medium transition"
+                  >
+                    Detay
+                  </button>
+                  <button
                     onClick={() => handleDirectWhatsApp(cust.phone, cust.fullName)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-medium transition"
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-medium transition"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
                     WhatsApp
@@ -358,6 +391,231 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Detail & Account Modal */}
+      {activeCustomerDetail && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-800 flex items-start justify-between bg-slate-950/60">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-xl text-white">
+                      {activeCustomerDetail.fullName}
+                    </h3>
+                    <span
+                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                        activeCustomerDetail.balance > 0
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      }`}
+                    >
+                      {activeCustomerDetail.balance > 0
+                        ? `₺${activeCustomerDetail.balance.toLocaleString('tr-TR')} Borç`
+                        : 'Bakiye Temiz'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                    Müşteri No: #{activeCustomerDetail.id} • Kayıt: {new Date(activeCustomerDetail.createdAt).toLocaleDateString('tr-TR')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveCustomerDetail(null);
+                  if (onClearSelectedCustomer) onClearSelectedCustomer();
+                }}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="p-5 overflow-y-auto space-y-5 flex-1">
+              {/* Contact & Address Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl space-y-1">
+                  <span className="text-slate-500 block">Telefon</span>
+                  <span className="font-mono font-bold text-slate-200 block">
+                    {activeCustomerDetail.phone}
+                  </span>
+                  <button
+                    onClick={() => handleDirectWhatsApp(activeCustomerDetail.phone, activeCustomerDetail.fullName)}
+                    className="mt-1 text-[11px] text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    WhatsApp İle Yaz
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl space-y-1">
+                  <span className="text-slate-500 block">E-posta</span>
+                  <span className="text-slate-200 truncate block">
+                    {activeCustomerDetail.email || 'Belirtilmedi'}
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl space-y-1">
+                  <span className="text-slate-500 block">Adres / Konum</span>
+                  <span className="text-slate-200 truncate block">
+                    {activeCustomerDetail.address || 'Belirtilmedi'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Notes if any */}
+              {activeCustomerDetail.notes && (
+                <div className="p-3 bg-slate-950/50 border border-slate-800/70 rounded-xl text-xs text-slate-300">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-semibold">
+                    Özel Müşteri Notu
+                  </span>
+                  {activeCustomerDetail.notes}
+                </div>
+              )}
+
+              {/* Registered Vehicles */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Car className="w-4 h-4 text-blue-400" />
+                    Kayıtlı Araçları ({getCustomerVehicles(activeCustomerDetail.id).length})
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-normal">
+                    Detay için araca tıklayın
+                  </span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {getCustomerVehicles(activeCustomerDetail.id).length === 0 ? (
+                    <p className="col-span-full text-xs text-slate-500 italic p-3 bg-slate-950/40 rounded-xl text-center">
+                      Bu müşteriye kayıtlı araç bulunmuyor.
+                    </p>
+                  ) : (
+                    getCustomerVehicles(activeCustomerDetail.id).map((veh) => (
+                      <button
+                        key={veh.id}
+                        onClick={() => {
+                          setActiveCustomerDetail(null);
+                          if (onClearSelectedCustomer) onClearSelectedCustomer();
+                          onSelectVehicle(veh);
+                        }}
+                        className="text-left p-3 bg-slate-950 border border-slate-800 hover:border-blue-500/40 rounded-xl transition group flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sm text-blue-400 group-hover:text-blue-300">
+                              {veh.plate}
+                            </span>
+                            <span className="text-[11px] text-slate-400">{veh.year}</span>
+                          </div>
+                          <p className="text-xs text-slate-300 mt-0.5">
+                            {veh.brand} {veh.model}
+                          </p>
+                          <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+                            {veh.currentKm.toLocaleString('tr-TR')} KM
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-0.5 transition shrink-0" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Service Records History */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-blue-400" />
+                  Müşterinin Servis & İş Emri Geçmişi ({storage.getServiceRecords().filter(r => r.customerId === activeCustomerDetail.id).length})
+                </h4>
+                <div className="space-y-2">
+                  {storage.getServiceRecords().filter(r => r.customerId === activeCustomerDetail.id).length === 0 ? (
+                    <p className="text-xs text-slate-500 italic p-3 bg-slate-950/40 rounded-xl text-center">
+                      Bu müşteriye ait servis kaydı bulunmuyor.
+                    </p>
+                  ) : (
+                    storage.getServiceRecords()
+                      .filter(r => r.customerId === activeCustomerDetail.id)
+                      .slice(0, 10)
+                      .map((rec) => {
+                        const veh = vehicles.find(v => v.id === rec.vehicleId);
+                        return (
+                          <div
+                            key={rec.id}
+                            onClick={() => {
+                              if (onOpenServiceDetail) {
+                                setActiveCustomerDetail(null);
+                                if (onClearSelectedCustomer) onClearSelectedCustomer();
+                                onOpenServiceDetail(rec);
+                              }
+                            }}
+                            className={`p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-1.5 ${
+                              onOpenServiceDetail ? 'hover:border-slate-700 cursor-pointer' : ''
+                            } transition`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-blue-400">{veh?.plate || 'Plaka Yok'}</span>
+                                <span className="text-slate-400">{new Date(rec.entryDate).toLocaleDateString('tr-TR')}</span>
+                              </div>
+                              <span className="font-bold text-emerald-400 font-mono">
+                                ₺{rec.grandTotal.toLocaleString('tr-TR')}
+                              </span>
+                            </div>
+                            <p className="text-slate-300 font-medium truncate">
+                              {rec.complaint}
+                            </p>
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800/60">
+                              <span>Durum: {rec.status}</span>
+                              <span className={rec.paymentStatus === 'ODENDI' ? 'text-emerald-400' : 'text-amber-400'}>
+                                {rec.paymentStatus === 'ODENDI' ? 'Ödendi' : `Kalan: ₺${Math.max(0, rec.grandTotal - (rec.paidAmount || 0)).toLocaleString('tr-TR')}`}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  const custToEdit = activeCustomerDetail;
+                  setActiveCustomerDetail(null);
+                  handleOpenEditModal(custToEdit);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium transition"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-blue-400" />
+                Bilgileri Düzenle
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDirectWhatsApp(activeCustomerDetail.phone, activeCustomerDetail.fullName)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition shadow-sm"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  WhatsApp
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveCustomerDetail(null);
+                    if (onClearSelectedCustomer) onClearSelectedCustomer();
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition"
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

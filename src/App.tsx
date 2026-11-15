@@ -10,7 +10,7 @@ import { RemindersView } from './components/RemindersView';
 import { SettingsView } from './components/SettingsView';
 import { NewServiceModal } from './components/NewServiceModal';
 import { storage } from './services/storage';
-import { Vehicle, ServiceRecord } from './types';
+import { Vehicle, ServiceRecord, Customer } from './types';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -19,6 +19,7 @@ export const App: React.FC = () => {
   const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false);
   const [preSelectedVehicle, setPreSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState<Vehicle | null>(null);
+  const [selectedCustomerForDetail, setSelectedCustomerForDetail] = useState<Customer | null>(null);
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<ServiceRecord | null>(null);
   const [, setStorageVersion] = useState(0);
 
@@ -66,6 +67,11 @@ export const App: React.FC = () => {
     setCurrentTab('vehicles');
   };
 
+  const handleSelectCustomer = (customer: Customer) => {
+    setSelectedCustomerForDetail(customer);
+    setCurrentTab('customers');
+  };
+
   const handleOpenServiceDetail = (record: ServiceRecord) => {
     setSelectedRecordForDetail(record);
     setCurrentTab('services');
@@ -87,6 +93,7 @@ export const App: React.FC = () => {
             setSelectedVehicleForDetail(null);
             setVehicleSearchFilter('');
           }
+          if (tab !== 'customers') setSelectedCustomerForDetail(null);
           if (tab !== 'services') setSelectedRecordForDetail(null);
         }}
         onOpenNewService={() => handleOpenNewService()}
@@ -117,12 +124,16 @@ export const App: React.FC = () => {
             onClearSelectedVehicle={() => setSelectedVehicleForDetail(null)}
             searchFilterQuery={vehicleSearchFilter}
             onClearSearchFilter={() => setVehicleSearchFilter('')}
+            onSelectCustomer={handleSelectCustomer}
           />
         )}
 
         {currentTab === 'customers' && (
           <CustomersView
             onSelectVehicle={handleSelectVehicle}
+            onOpenServiceDetail={handleOpenServiceDetail}
+            selectedCustomerForDetail={selectedCustomerForDetail}
+            onClearSelectedCustomer={() => setSelectedCustomerForDetail(null)}
           />
         )}
 
