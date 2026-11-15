@@ -81,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none no-print">
+    <aside className="w-72 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none no-print">
       {/* Brand Header */}
       <div className="p-4 border-b border-slate-800 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -177,12 +177,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                <span className="whitespace-nowrap">{item.label}</span>
               </div>
               {item.badge !== undefined && (
-                <span className={`text-[10px] font-bold text-white px-2 py-0.5 rounded-full ${item.badgeColor}`}>
+                <span className={`text-[10px] font-bold text-white px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ml-2 ${item.badgeColor}`}>
                   {item.badge}
                 </span>
               )}
