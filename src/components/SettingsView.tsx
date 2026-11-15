@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Save, 
@@ -8,7 +8,10 @@ import {
   ShieldCheck, 
   RefreshCw,
   CheckCircle,
-  FileText
+  FileText,
+  Layers,
+  Car,
+  Package
 } from 'lucide-react';
 import { storage, defaultSettings } from '../services/storage';
 import { ShopSettings } from '../types';
@@ -17,6 +20,20 @@ export const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<ShopSettings>(() => storage.getSettings());
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [seedStatus, setSeedStatus] = useState<string | null>(null);
+  const [, setVersion] = useState(0);
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      setVersion(v => v + 1);
+    });
+  }, []);
+
+  const handleSeed100Data = () => {
+    const result = storage.seed100TestData();
+    setSeedStatus(`✓ ${result.customers} Müşteri, ${result.vehicles} Araç, ${result.stockItems} Yedek Parça ve ${result.services} İş Emri yüklendi!`);
+    setTimeout(() => setSeedStatus(null), 6000);
+  };
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,21 +297,61 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
-          {/* Reset Demo Data */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Geliştirici & Test
-            </h4>
-            <p className="text-xs text-slate-500">
-              Uygulamayı ilk haline döndürmek ve örnek servis/araç kayıtlarını yeniden yüklemek için:
+          {/* Test & Demo Data */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-400" />
+                Geliştirici & Test Verisi
+              </h4>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                100+ Kayıt
+              </span>
+            </div>
+
+            {/* Current Stats Summary */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center text-xs">
+              <div>
+                <p className="text-[10px] text-slate-500">Müşteri</p>
+                <p className="font-bold text-white font-mono">{storage.getCustomers().length}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500">Araç</p>
+                <p className="font-bold text-blue-400 font-mono">{storage.getVehicles().length}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500">Yedek Parça</p>
+                <p className="font-bold text-emerald-400 font-mono">{storage.getStockItems().length}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Çoklu veri performansını, plaka aramasını ve kritik stok filtrelerini test etmek için 100 müşteri, 100 araç ve 100 yedek parça yükleyin:
             </p>
+
             <button
-              onClick={handleResetDemoData}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 rounded-xl text-xs font-medium transition"
+              onClick={handleSeed100Data}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-blue-600/20 active:scale-98"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Örnek Verileri Sıfırla
+              <Database className="w-4 h-4" />
+              100 Test Verisi Yükle (Araç, Müşteri & Stok)
             </button>
+
+            {seedStatus && (
+              <p className="text-xs font-medium text-emerald-400 text-center animate-in fade-in bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-lg">
+                {seedStatus}
+              </p>
+            )}
+
+            <div className="pt-2 border-t border-slate-800">
+              <button
+                onClick={handleResetDemoData}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-medium transition"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Fabrika Demo Verilerine Sıfırla
+              </button>
+            </div>
           </div>
         </div>
       </div>

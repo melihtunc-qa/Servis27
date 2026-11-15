@@ -10,6 +10,13 @@ import type {
   Technician,
   CashTransaction 
 } from '../types/index.ts';
+import {
+  generate100Customers,
+  generate100Vehicles,
+  generate100StockItems,
+  generateRealisticServiceRecords,
+  generateRealisticReminders
+} from './mockData100.ts';
 
 const STORAGE_KEYS = {
   CUSTOMERS: 'servis365_customers',
@@ -43,87 +50,8 @@ const initialTechnicians: Technician[] = [
   { id: 'tech-3', name: 'Serkan Usta', phone: '0535 555 03 03', specialty: 'Oto Elektrik & Arıza Teşhis', isActive: true },
 ];
 
-// Initial Spare Parts Inventory
-const initialStockItems: StockItem[] = [
-  {
-    id: 'stk-1',
-    code: 'CAST-5W30-4L',
-    name: 'Castrol Edge 5W-30 LL Motor Yağı 4L',
-    category: 'Motor Yağı',
-    brand: 'Castrol',
-    quantity: 14,
-    minQuantity: 4,
-    unitCost: 1350,
-    unitPrice: 1850,
-    shelfLocation: 'Raf A-1',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'stk-2',
-    code: 'MOTUL-5W30-5L',
-    name: 'Motul 8100 X-clean EFE 5W-30 5L',
-    category: 'Motor Yağı',
-    brand: 'Motul',
-    quantity: 8,
-    minQuantity: 3,
-    unitCost: 1600,
-    unitPrice: 2200,
-    shelfLocation: 'Raf A-2',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'stk-3',
-    code: 'MANN-HU71151X',
-    name: 'Mann Yağ Filtresi (VAG Grubu)',
-    category: 'Filtre',
-    brand: 'Mann',
-    quantity: 6,
-    minQuantity: 5,
-    unitCost: 280,
-    unitPrice: 480,
-    shelfLocation: 'Kutu F-12',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'stk-4',
-    code: 'MANN-C35154',
-    name: 'Mann Hava Filtresi (VAG Grubu)',
-    category: 'Filtre',
-    brand: 'Mann',
-    quantity: 2, // Kritik seviyede
-    minQuantity: 4,
-    unitCost: 350,
-    unitPrice: 580,
-    shelfLocation: 'Kutu F-14',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'stk-5',
-    code: 'BOSCH-0986494004',
-    name: 'Bosch Ön Fren Balata Takımı (Megane/Clio)',
-    category: 'Fren Sistemi',
-    brand: 'Bosch',
-    quantity: 5,
-    minQuantity: 2,
-    unitCost: 1250,
-    unitPrice: 1800,
-    shelfLocation: 'Raf B-4',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'stk-6',
-    code: 'TOTAL-GLACELF-3L',
-    name: 'Total Glacelf Kırmızı Organik Antifriz 3L',
-    category: 'Sıvı & Katkı',
-    brand: 'Total',
-    quantity: 12,
-    minQuantity: 4,
-    unitCost: 320,
-    unitPrice: 550,
-    shelfLocation: 'Raf C-1',
-    updatedAt: new Date().toISOString(),
-  },
-];
+// Initial Spare Parts Inventory (100 distinct items)
+const initialStockItems: StockItem[] = generate100StockItems();
 
 // Pre-defined Maintenance Packages
 const initialPackages: MaintenancePackage[] = [
@@ -166,100 +94,11 @@ const initialPackages: MaintenancePackage[] = [
   },
 ];
 
-// Initial Customers
-const initialCustomers: Customer[] = [
-  {
-    id: 'cust-1',
-    fullName: 'Ahmet Yılmaz',
-    phone: '0532 111 22 33',
-    email: 'ahmet.yilmaz@email.com',
-    address: 'Kadıköy, İstanbul',
-    balance: 1500,
-    notes: 'Devamlı müşteri, filo araçları da var.',
-    createdAt: '2026-01-15T10:00:00Z',
-  },
-  {
-    id: 'cust-2',
-    fullName: 'Burak Demir',
-    phone: '0544 222 33 44',
-    email: 'burak.demir@email.com',
-    address: 'Ümraniye, İstanbul',
-    balance: 0,
-    notes: 'Hassas müşteri, orijinal parça tercih ediyor.',
-    createdAt: '2026-02-01T11:30:00Z',
-  },
-  {
-    id: 'cust-3',
-    fullName: 'Fatma Şahin',
-    phone: '0555 333 44 55',
-    email: 'fatma.sahin@email.com',
-    address: 'Beşiktaş, İstanbul',
-    balance: 0,
-    notes: 'Periyodik bakım hatırlatması WhatsApp ile iletilsin.',
-    createdAt: '2026-02-20T14:15:00Z',
-  },
-];
+// Initial Customers (100 distinct customers)
+const initialCustomers: Customer[] = generate100Customers();
 
-// Initial Vehicles
-const initialVehicles: Vehicle[] = [
-  {
-    id: 'veh-1',
-    customerId: 'cust-1',
-    plate: '34VR4821',
-    brand: 'Volkswagen',
-    model: 'Passat 1.6 TDI B8',
-    year: 2018,
-    currentKm: 148500,
-    vin: 'WVWZZZ3CZJE123456',
-    engineNo: 'DCX12345',
-    fuelType: 'Dizel',
-    color: 'Füme',
-    notes: 'DSG kavrama 110.000 kmde değişti.',
-    createdAt: '2026-01-15T10:05:00Z',
-  },
-  {
-    id: 'veh-2',
-    customerId: 'cust-2',
-    plate: '34ABC789',
-    brand: 'Renault',
-    model: 'Megane 4 1.5 dCi',
-    year: 2020,
-    currentKm: 89000,
-    vin: 'VF1RFB00123456789',
-    fuelType: 'Dizel',
-    color: 'Beyaz',
-    notes: 'Triger seti kontrol edilecek.',
-    createdAt: '2026-02-01T11:35:00Z',
-  },
-  {
-    id: 'veh-3',
-    customerId: 'cust-3',
-    plate: '06FS5522',
-    brand: 'Toyota',
-    model: 'Corolla 1.8 Hybrid',
-    year: 2021,
-    currentKm: 54000,
-    vin: 'NMTBZ3BE123456789',
-    fuelType: 'Hibrit',
-    color: 'Gümüş Gri',
-    notes: 'Bakım zamanı yaklaşıyor.',
-    createdAt: '2026-02-20T14:20:00Z',
-  },
-  {
-    id: 'veh-4',
-    customerId: 'cust-1',
-    plate: '34VR8726',
-    brand: 'Fiat',
-    model: 'Egea 1.3 MultiJet',
-    year: 2022,
-    currentKm: 76000,
-    vin: 'NM435600001234567',
-    fuelType: 'Dizel',
-    color: 'Kurşun Gri',
-    notes: 'Filo aracı, periyodik bakım takibi.',
-    createdAt: '2026-03-01T12:00:00Z',
-  },
-];
+// Initial Vehicles (100 distinct vehicles)
+const initialVehicles: Vehicle[] = generate100Vehicles(initialCustomers);
 
 // Initial Service Records
 const initialRecords: ServiceRecord[] = [
@@ -490,10 +329,12 @@ class StorageService {
       }
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.CUSTOMERS)) {
+    const existingCustomers = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
+    if (!existingCustomers || JSON.parse(existingCustomers).length < 10) {
       localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(initialCustomers));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
+    const existingVehicles = localStorage.getItem(STORAGE_KEYS.VEHICLES);
+    if (!existingVehicles || JSON.parse(existingVehicles).length < 10) {
       localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(initialVehicles));
     }
     if (!localStorage.getItem(STORAGE_KEYS.SERVICE_RECORDS)) {
@@ -505,7 +346,8 @@ class StorageService {
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.STOCK_ITEMS)) {
+    const existingStock = localStorage.getItem(STORAGE_KEYS.STOCK_ITEMS);
+    if (!existingStock || JSON.parse(existingStock).length < 10) {
       localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(initialStockItems));
     }
     if (!localStorage.getItem(STORAGE_KEYS.PACKAGES)) {
@@ -902,6 +744,38 @@ class StorageService {
       console.error('Import error', e);
       return false;
     }
+  }
+
+  seed100TestData(): {
+    customers: number;
+    vehicles: number;
+    stockItems: number;
+    services: number;
+    serviceRecords: number;
+    reminders: number;
+  } {
+    const customers = generate100Customers();
+    const vehicles = generate100Vehicles(customers);
+    const stockItems = generate100StockItems();
+    const serviceRecords = generateRealisticServiceRecords(customers, vehicles, stockItems);
+    const reminders = generateRealisticReminders(customers, vehicles);
+
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(vehicles));
+    localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(stockItems));
+    localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(serviceRecords));
+    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(reminders));
+
+    this.notifyListeners();
+
+    return {
+      customers: customers.length,
+      vehicles: vehicles.length,
+      stockItems: stockItems.length,
+      services: serviceRecords.length,
+      serviceRecords: serviceRecords.length,
+      reminders: reminders.length,
+    };
   }
 
   // --- Dashboard Aggregates ---
