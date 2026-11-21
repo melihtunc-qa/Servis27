@@ -58,15 +58,22 @@ export const InventoryView: React.FC = () => {
     });
   }, []);
 
-  // Unified categories: standard inventory categories + any custom categories present in items
+  // Unified categories: standard categories + dynamic item categories, with 'Diğer' guaranteed at the very end
   const availableCategories = useMemo(() => {
-    const cats = new Set<string>(STOCK_CATEGORIES);
+    const cats = new Set<string>();
+    // 1. Add standard categories (except 'Diğer')
+    STOCK_CATEGORIES.forEach(c => {
+      if (c !== 'Diğer') cats.add(c);
+    });
+    // 2. Add any custom / dynamic categories from existing stock items (except 'Diğer')
     stockItems.forEach(item => {
-      if (item.category && item.category.trim()) {
-        cats.add(item.category.trim());
+      const trimmed = item.category?.trim();
+      if (trimmed && trimmed !== 'Diğer') {
+        cats.add(trimmed);
       }
     });
-    return Array.from(cats);
+    // 3. 'Diğer' is always positioned at the very end
+    return [...Array.from(cats), 'Diğer'];
   }, [stockItems]);
 
   const getCategoryButtonStyle = (cat: string, isSelected: boolean): string => {
