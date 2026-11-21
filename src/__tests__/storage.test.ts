@@ -307,6 +307,32 @@ describe('Storage & Repository Integration Tests', () => {
       const expectedDateStr = expectedTarget.toISOString().split('T')[0];
       assert.equal(newReminder.targetDate, expectedDateStr);
     });
+
+    it('should successfully update an existing reminder details and status', () => {
+      const existingReminders = storage.getReminders();
+      const targetRem = existingReminders[0];
+      assert.ok(targetRem, 'Target reminder should exist');
+
+      const updated = {
+        ...targetRem,
+        title: 'Güncellenmiş Periyodik Ağır Bakım',
+        targetDate: '2026-12-31',
+        targetKm: 185000,
+        status: 'TAMAMLANDI' as const,
+        notes: 'Müşteri onayıyla tüm filtreler ve triger güncellendi',
+      };
+
+      storage.saveReminder(updated);
+
+      const refreshedList = storage.getReminders();
+      const found = refreshedList.find(r => r.id === targetRem.id);
+      assert.ok(found, 'Updated reminder must exist in storage');
+      assert.equal(found?.title, 'Güncellenmiş Periyodik Ağır Bakım');
+      assert.equal(found?.targetDate, '2026-12-31');
+      assert.equal(found?.targetKm, 185000);
+      assert.equal(found?.status, 'TAMAMLANDI');
+      assert.equal(found?.notes, 'Müşteri onayıyla tüm filtreler ve triger güncellendi');
+    });
   });
 
   describe('Backup & Restore (Export / Import)', () => {

@@ -11,7 +11,8 @@ import {
   X, 
   Trash2,
   Search,
-  Calendar
+  Calendar,
+  Edit2
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Reminder, ReminderType, ReminderStatus, Vehicle, Customer } from '../types';
@@ -23,6 +24,7 @@ export const RemindersView: React.FC = () => {
   const [vehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers] = useState<Customer[]>(() => storage.getCustomers());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [activeTab, setActiveTab] = useState<ReminderFilterTab>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -33,6 +35,7 @@ export const RemindersView: React.FC = () => {
     title: 'Periyodik Yağ & Filtre Bakımı',
     targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     targetKm: 0,
+    status: 'YAKLASAN' as ReminderStatus,
     notes: '',
   });
 
@@ -79,6 +82,34 @@ export const RemindersView: React.FC = () => {
     return plate.includes(q) || custName.includes(q) || custPhone.includes(q) || title.includes(q);
   });
 
+  const handleOpenAddModal = () => {
+    setEditingReminder(null);
+    setFormData({
+      vehicleId: vehicles[0]?.id || '',
+      type: 'YAG_BAKIMI',
+      title: 'Periyodik Yağ & Filtre Bakımı',
+      targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      targetKm: 0,
+      status: 'YAKLASAN',
+      notes: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (rem: Reminder) => {
+    setEditingReminder(rem);
+    setFormData({
+      vehicleId: rem.vehicleId,
+      type: rem.type,
+      title: rem.title,
+      targetDate: rem.targetDate || '',
+      targetKm: rem.targetKm || 0,
+      status: rem.status,
+      notes: rem.notes || '',
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSendWhatsApp = (rem: Reminder) => {
     const customer = getCustomer(rem.customerId);
     const vehicle = getVehicle(rem.vehicleId);
@@ -112,27 +143,43 @@ export const RemindersView: React.FC = () => {
     }
   };
 
-  const handleCreateReminder = (e: React.FormEvent) => {
+  const handleSubmitReminder = (e: React.FormEvent) => {
     e.preventDefault();
     const vehicle = getVehicle(formData.vehicleId);
     if (!vehicle) return;
 
-    const newReminder: Reminder = {
-      id: `rem-${Date.now()}`,
-      vehicleId: vehicle.id,
-      customerId: vehicle.customerId,
-      type: formData.type,
-      title: formData.title,
-      targetDate: formData.targetDate,
-      targetKm: Number(formData.targetKm) || undefined,
-      status: 'YAKLASAN',
-      notes: formData.notes,
-      createdAt: new Date().toISOString(),
-    };
+    if (editingReminder) {
+      const updatedReminder: Reminder = {
+        ...editingReminder,
+        vehicleId: vehicle.id,
+        customerId: vehicle.customerId,
+        type: formData.type,
+        title: formData.title,
+        targetDate: formData.targetDate,
+        targetKm: Number(formData.targetKm) || undefined,
+        status: formData.status,
+        notes: formData.notes,
+      };
+      storage.saveReminder(updatedReminder);
+    } else {
+      const newReminder: Reminder = {
+        id: `rem-${Date.now()}`,
+        vehicleId: vehicle.id,
+        customerId: vehicle.customerId,
+        type: formData.type,
+        title: formData.title,
+        targetDate: formData.targetDate,
+        targetKm: Number(formData.targetKm) || undefined,
+        status: formData.status,
+        notes: formData.notes,
+        createdAt: new Date().toISOString(),
+      };
+      storage.saveReminder(newReminder);
+    }
 
-    storage.saveReminder(newReminder);
     refreshReminders();
     setIsModalOpen(false);
+    setEditingReminder(null);
   };
 
   return (
@@ -146,7 +193,7 @@ export const RemindersView: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition shadow-md shadow-blue-600/20 active:scale-98"
         >
           <Plus className="w-4 h-4" />
@@ -282,33 +329,47 @@ export const RemindersView: React.FC = () => {
 
                 {/* Actions */}
                 <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                  {!isCompleted && (
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <button
-                      onClick={() => handleSendWhatsApp(rem)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition shadow-sm"
+                      onClick={() => handleOpenEditModal(rem)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 hover:border-blue-500 rounded-xl text-xs font-medium transition shadow-sm truncate"
+                      title="Hatırlatmayı Güncelle / Düzenle"
                     >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      WhatsApp'tan Bildir
+                      <Edit2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Güncelle</span>
                     </button>
-                  )}
 
-                  {!isCompleted ? (
+                    {!isCompleted && (
+                      <button
+                        onClick={() => handleSendWhatsApp(rem)}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition shadow-sm truncate"
+                        title="WhatsApp İle Bildir"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>WhatsApp</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!isCompleted && (
+                      <button
+                        onClick={() => handleMarkCompleted(rem)}
+                        className="p-2 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-xl transition"
+                        title="Tamamlandı Olarak İşaretle"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                    )}
+
                     <button
-                      onClick={() => handleMarkCompleted(rem)}
-                      className="p-2 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-xl transition"
-                      title="Tamamlandı Olarak İşaretle"
+                      onClick={() => handleDelete(rem.id)}
+                      className="p-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl transition"
+                      title="Sil"
                     >
-                      <CheckCircle className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  ) : null}
-
-                  <button
-                    onClick={() => handleDelete(rem.id)}
-                    className="p-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl transition"
-                    title="Sil"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  </div>
                 </div>
               </div>
             );
@@ -316,24 +377,33 @@ export const RemindersView: React.FC = () => {
         )}
       </div>
 
-      {/* Add Reminder Modal */}
+      {/* Add / Edit Reminder Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="p-5 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-blue-400" />
-                <h3 className="font-bold text-lg text-white">Yeni Bakım / Hatırlatma Tanımla</h3>
+                {editingReminder ? (
+                  <Edit2 className="w-5 h-5 text-blue-400" />
+                ) : (
+                  <Bell className="w-5 h-5 text-blue-400" />
+                )}
+                <h3 className="font-bold text-lg text-white">
+                  {editingReminder ? 'Hatırlatmayı Güncelle' : 'Yeni Bakım / Hatırlatma Tanımla'}
+                </h3>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingReminder(null);
+                }}
                 className="text-slate-400 hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateReminder} className="p-5 space-y-4">
+            <form onSubmit={handleSubmitReminder} className="p-5 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
                   İlgili Araç *
@@ -416,6 +486,23 @@ export const RemindersView: React.FC = () => {
                 </div>
               </div>
 
+              {editingReminder && (
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
+                    Hatırlatma Durumu
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as ReminderStatus })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="YAKLASAN">Yaklaşan</option>
+                    <option value="BILDIRILDI">Bildirildi (WhatsApp)</option>
+                    <option value="TAMAMLANDI">Tamamlandı</option>
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
                   Notlar
@@ -432,7 +519,10 @@ export const RemindersView: React.FC = () => {
               <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingReminder(null);
+                  }}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition"
                 >
                   İptal
@@ -441,7 +531,7 @@ export const RemindersView: React.FC = () => {
                   type="submit"
                   className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition shadow-md shadow-blue-600/30"
                 >
-                  Kaydet
+                  {editingReminder ? 'Güncelle' : 'Kaydet'}
                 </button>
               </div>
             </form>
