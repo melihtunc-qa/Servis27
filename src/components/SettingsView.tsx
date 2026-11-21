@@ -14,7 +14,10 @@ import {
   Car,
   Package,
   AlertTriangle,
-  X
+  X,
+  Lock,
+  Unlock,
+  KeyRound
 } from 'lucide-react';
 import { storage, defaultSettings } from '../services/storage';
 import { ShopSettings } from '../types';
@@ -27,6 +30,11 @@ export const SettingsView: React.FC = () => {
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [backupDownloaded, setBackupDownloaded] = useState(false);
+  const [isDevUnlocked, setIsDevUnlocked] = useState(() => {
+    return typeof window !== 'undefined' && sessionStorage.getItem('servis365_dev_unlocked') === 'true';
+  });
+  const [devPasswordInput, setDevPasswordInput] = useState('');
+  const [devPasswordError, setDevPasswordError] = useState<string | null>(null);
   const [, setVersion] = useState(0);
 
   useEffect(() => {
@@ -34,6 +42,25 @@ export const SettingsView: React.FC = () => {
       setVersion(v => v + 1);
     });
   }, []);
+
+  const handleUnlockDevMode = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (devPasswordInput === '123456') {
+      setIsDevUnlocked(true);
+      setDevPasswordError(null);
+      setDevPasswordInput('');
+      sessionStorage.setItem('servis365_dev_unlocked', 'true');
+    } else {
+      setDevPasswordError('Hatalı geliştirici şifresi! Lütfen tekrar deneyiniz.');
+    }
+  };
+
+  const handleLockDevMode = () => {
+    setIsDevUnlocked(false);
+    setDevPasswordInput('');
+    setDevPasswordError(null);
+    sessionStorage.removeItem('servis365_dev_unlocked');
+  };
 
   const handleSeed100Data = () => {
     const result = storage.seed100TestData();
@@ -328,71 +355,133 @@ export const SettingsView: React.FC = () => {
           </div>
 
           {/* Test & Demo Data */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-400" />
-                Geliştirici & Test Verisi
-              </h4>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                100+ Kayıt
-              </span>
-            </div>
-
-            {/* Current Stats Summary */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center text-xs">
-              <div>
-                <p className="text-[10px] text-slate-500">Müşteri</p>
-                <p className="font-bold text-white font-mono">{storage.getCustomers().length}</p>
+          {!isDevUnlocked ? (
+            /* Locked State */
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  Geliştirici & Test Verisi
+                </h4>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  Şifre Korumalı
+                </span>
               </div>
-              <div>
-                <p className="text-[10px] text-slate-500">Araç</p>
-                <p className="font-bold text-blue-400 font-mono">{storage.getVehicles().length}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-500">Yedek Parça</p>
-                <p className="font-bold text-emerald-400 font-mono">{storage.getStockItems().length}</p>
-              </div>
-            </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Çoklu veri performansını, plaka aramasını ve kritik stok filtrelerini test etmek için 100 müşteri, 100 araç ve 100 yedek parça yükleyin:
-            </p>
-
-            <button
-              onClick={handleSeed100Data}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-blue-600/20 active:scale-98"
-            >
-              <Database className="w-4 h-4" />
-              100 Test Verisi Yükle (Araç, Müşteri & Stok)
-            </button>
-
-            {seedStatus && (
-              <p className="text-xs font-medium text-emerald-400 text-center animate-in fade-in bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-lg">
-                {seedStatus}
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Bu alan 100 test verisi yükleme ve fabrika sıfırlama araçlarını içerir. Erişim için geliştirici şifresini giriniz:
               </p>
-            )}
 
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <button
-                onClick={handleResetDemoData}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 border border-amber-800/50 rounded-xl text-xs font-medium transition active:scale-98"
-                title="Sistemi standart demo verilerine (3 müşteri, 4 araç, 6 yedek parça) sıfırlar"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Fabrika Demo Verilerine Sıfırla (Başlangıç Verileri)
-              </button>
+              <form onSubmit={handleUnlockDevMode} className="space-y-3">
+                <div>
+                  <input
+                    type="password"
+                    value={devPasswordInput}
+                    onChange={(e) => {
+                      setDevPasswordInput(e.target.value);
+                      if (devPasswordError) setDevPasswordError(null);
+                    }}
+                    placeholder="Geliştirici Şifresi"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition font-mono tracking-widest"
+                    autoComplete="off"
+                  />
+                </div>
 
-              <button
-                onClick={handleClearAllData}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-medium transition active:scale-98"
-                title="Tüm müşteri, araç, servis ve stok verilerini kalıcı olarak silip boş başlatır"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Tüm Verileri Temizle (Boş Veritabanı - 0 Kayıt)
-              </button>
+                {devPasswordError && (
+                  <p className="text-xs text-rose-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    {devPasswordError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition shadow-sm active:scale-98"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                  Giriş Yap ve Kilidi Aç
+                </button>
+              </form>
             </div>
-          </div>
+          ) : (
+            /* Unlocked State */
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                  Geliştirici & Test Verisi
+                </h4>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Kilit Açık
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleLockDevMode}
+                    title="Geliştirici alanını kilitle"
+                    className="text-slate-400 hover:text-amber-400 p-1 rounded-lg hover:bg-slate-800 transition text-[11px] flex items-center gap-1"
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span className="text-[10px]">Kilitle</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Current Stats Summary */}
+              <div className="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center text-xs">
+                <div>
+                  <p className="text-[10px] text-slate-500">Müşteri</p>
+                  <p className="font-bold text-white font-mono">{storage.getCustomers().length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500">Araç</p>
+                  <p className="font-bold text-blue-400 font-mono">{storage.getVehicles().length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500">Yedek Parça</p>
+                  <p className="font-bold text-emerald-400 font-mono">{storage.getStockItems().length}</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Çoklu veri performansını, plaka aramasını ve kritik stok filtrelerini test etmek için 100 müşteri, 100 araç ve 100 yedek parça yükleyin:
+              </p>
+
+              <button
+                onClick={handleSeed100Data}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-blue-600/20 active:scale-98"
+              >
+                <Database className="w-4 h-4" />
+                100 Test Verisi Yükle (Araç, Müşteri & Stok)
+              </button>
+
+              {seedStatus && (
+                <p className="text-xs font-medium text-emerald-400 text-center animate-in fade-in bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-lg">
+                  {seedStatus}
+                </p>
+              )}
+
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <button
+                  onClick={handleResetDemoData}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 border border-amber-800/50 rounded-xl text-xs font-medium transition active:scale-98"
+                  title="Sistemi standart demo verilerine (3 müşteri, 4 araç, 6 yedek parça) sıfırlar"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Fabrika Demo Verilerine Sıfırla (Başlangıç Verileri)
+                </button>
+
+                <button
+                  onClick={handleClearAllData}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-medium transition active:scale-98"
+                  title="Tüm müşteri, araç, servis ve stok verilerini kalıcı olarak silip boş başlatır"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Tüm Verileri Temizle (Boş Veritabanı - 0 Kayıt)
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
