@@ -472,7 +472,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                   className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 border border-cyan-800 rounded-lg text-xs font-medium flex items-center gap-1 transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  + Manuel Parça
+                  + Stok Dışı Parça
                 </button>
                 <button
                   type="button"
