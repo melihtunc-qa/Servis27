@@ -11,8 +11,9 @@ import { SettingsView } from './components/SettingsView';
 import { NewServiceModal } from './components/NewServiceModal';
 import { storage } from './services/storage';
 import { Vehicle, ServiceRecord, Customer } from './types';
+import { ModalProvider } from './context/ModalContext';
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [quickSearchPlate, setQuickSearchPlate] = useState('');
   const [vehicleSearchFilter, setVehicleSearchFilter] = useState('');
@@ -170,5 +171,13 @@ export const App: React.FC = () => {
         preSelectedVehicle={preSelectedVehicle}
       />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ModalProvider>
+      <AppContent />
+    </ModalProvider>
   );
 };

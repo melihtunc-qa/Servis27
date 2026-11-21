@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Customer, Vehicle, ServiceRecord } from '../types';
+import { useModal } from '../context/ModalContext';
 
 interface CustomersViewProps {
   onSelectVehicle: (vehicle: Vehicle) => void;
@@ -34,6 +35,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   selectedCustomerForDetail,
   onClearSelectedCustomer,
 }) => {
+  const { alert } = useModal();
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,7 +113,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const handleSaveCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone) {
-      alert('Lütfen Müşteri Adı ve Telefon alanlarını doldurunuz.');
+      alert({
+        title: 'Eksik Müşteri Bilgisi',
+        message: 'Lütfen Müşteri Adı ve Telefon alanlarını doldurunuz.',
+        variant: 'warning',
+      });
       return;
     }
 

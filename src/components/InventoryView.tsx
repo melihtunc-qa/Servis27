@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { StockItem } from '../types';
+import { useModal } from '../context/ModalContext';
 
 const STOCK_CATEGORIES = [
   'Motor Yağı',
@@ -29,6 +30,7 @@ const STOCK_CATEGORIES = [
 ] as const;
 
 export const InventoryView: React.FC = () => {
+  const { confirm, alert } = useModal();
   const [stockItems, setStockItems] = useState<StockItem[]>(() => storage.getStockItems());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -134,7 +136,11 @@ export const InventoryView: React.FC = () => {
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.code || !formData.name) {
-      alert('Lütfen Parça Kodu ve Adını doldurunuz.');
+      alert({
+        title: 'Eksik Parça Bilgisi',
+        message: 'Lütfen Parça Kodu ve Adını doldurunuz.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -157,8 +163,15 @@ export const InventoryView: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bu parçayı stoktan silmek istediğinize emin misiniz?')) {
+  const handleDelete = async (id: string) => {
+    const isConfirmed = await confirm({
+      title: 'Stok Kalemini Sil',
+      message: 'Bu parçayı stoktan silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       storage.deleteStockItem(id);
       refreshItems();
     }

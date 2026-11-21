@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, Vehicle, Customer, StockItem, ItemType } from '../types';
+import { useModal } from '../context/ModalContext';
 
 interface ServiceRecordsViewProps {
   onOpenNewService: () => void;
@@ -33,6 +34,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
   selectedRecordForModal,
   onCloseDetailModal,
 }) => {
+  const { confirm, alert } = useModal();
   const [records, setRecords] = useState<ServiceRecord[]>(() => storage.getServiceRecords());
   const [vehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers] = useState<Customer[]>(() => storage.getCustomers());
@@ -137,10 +139,17 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
     }
   };
 
-  const handleDeleteRecord = (record: ServiceRecord) => {
+  const handleDeleteRecord = async (record: ServiceRecord) => {
     const vehicle = getVehicle(record.vehicleId);
     const plate = vehicle?.plate || 'Bu araca ait';
-    if (window.confirm(`${plate} plakalı #${record.id.toUpperCase()} numaralı iş emrini silmek istediğinize emin misiniz?\n\nNot: Bu iş emrinde kullanılan yedek parçalar otomatik olarak depoya/stoka iade edilecek, müşteri cari borcu ve kasa tahsilat kayıtları güncellenecektir.`)) {
+    const isConfirmed = await confirm({
+      title: 'İş Emrini Sil',
+      message: `${plate} plakalı #${record.id.toUpperCase()} numaralı iş emrini silmek istediğinize emin misiniz?\n\nNot: Bu iş emrinde kullanılan yedek parçalar otomatik olarak depoya/stoka iade edilecek, müşteri cari borcu ve kasa tahsilat kayıtları güncellenecektir.`,
+      confirmText: 'İş Emrini Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       storage.deleteServiceRecord(record.id);
       setActiveRecord(null);
       setIsEditing(false);
@@ -267,7 +276,11 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
   const handleSaveEdit = () => {
     if (!activeRecord) return;
     if (!editComplaint.trim()) {
-      alert('Lütfen müşteri talebini / şikayetini giriniz.');
+      alert({
+        title: 'Müşteri Talebi Eksik',
+        message: 'Lütfen müşteri talebini / şikayetini giriniz.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -910,7 +923,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                                   />
                                   {it.stockItemId && (
                                     <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
-                                      <span>📦 Depoya Bağlı</span>
+                                      <span>📦 Stoktan Düşer</span>
                                       <button
                                         type="button"
                                         onClick={() => handleUnlinkStock(idx)}

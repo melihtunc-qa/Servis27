@@ -34,7 +34,11 @@ export const mockStorage = new LocalStorageMock();
   localStorage: mockStorage,
   open: () => {},
   location: { reload: () => {} },
+  alert: () => {},
+  confirm: () => true,
 };
+(globalThis as any).alert = (globalThis as any).alert || (() => {});
+(globalThis as any).confirm = (globalThis as any).confirm || (() => true);
 
 export function clearStorage() {
   mockStorage.clear();

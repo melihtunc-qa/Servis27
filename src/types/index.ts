@@ -160,3 +160,20 @@ export interface ShopSettings {
   defaultOilPeriodDays: number;
   footerNote: string;
 }
+
+export type ModalVariant = 'danger' | 'warning' | 'info' | 'success';
+
+export interface ConfirmOptions {
+  title?: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: ModalVariant;
+}
+
+export interface AlertOptions {
+  title?: string;
+  message: string;
+  confirmText?: string;
+  variant?: ModalVariant;
+}

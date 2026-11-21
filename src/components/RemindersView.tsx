@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Reminder, ReminderType, ReminderStatus, Vehicle, Customer } from '../types';
+import { useModal } from '../context/ModalContext';
 
 export type ReminderFilterTab = 'ALL' | 'YAKLASAN' | 'GECMIS' | 'TAMAMLANDI';
 
 export const RemindersView: React.FC = () => {
+  const { confirm } = useModal();
   const [reminders, setReminders] = useState<Reminder[]>(() => storage.getReminders());
   const [vehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers] = useState<Customer[]>(() => storage.getCustomers());
@@ -136,8 +138,15 @@ export const RemindersView: React.FC = () => {
     refreshReminders();
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bu hatırlatmayı silmek istediğinize emin misiniz?')) {
+  const handleDelete = async (id: string) => {
+    const isConfirmed = await confirm({
+      title: 'Hatırlatmayı Sil',
+      message: 'Bu periyodik bakım hatırlatmasını silmek istediğinize emin misiniz?',
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       storage.deleteReminder(id);
       refreshReminders();
     }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Vehicle, Customer, FuelType, ServiceRecord } from '../types';
+import { useModal } from '../context/ModalContext';
 
 interface VehiclesViewProps {
   onOpenNewServiceForVehicle: (vehicle: Vehicle) => void;
@@ -35,6 +36,7 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   onClearSearchFilter,
   onSelectCustomer,
 }) => {
+  const { alert } = useModal();
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
   const [searchTerm, setSearchTerm] = useState(searchFilterQuery || '');
@@ -105,7 +107,11 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({
   const handleCreateVehicle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.plate || !formData.brand || !formData.model) {
-      alert('Lütfen Plaka, Marka ve Model alanlarını doldurunuz.');
+      alert({
+        title: 'Eksik Araç Bilgisi',
+        message: 'Lütfen Plaka, Marka ve Model alanlarını doldurunuz.',
+        variant: 'warning',
+      });
       return;
     }
 

@@ -19,8 +19,10 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { CashTransaction, Customer } from '../types';
+import { useModal } from '../context/ModalContext';
 
 export const CashFlowView: React.FC = () => {
+  const { confirm, alert } = useModal();
   const [transactions, setTransactions] = useState<CashTransaction[]>(() => storage.getCashTransactions());
   const [filterType, setFilterType] = useState<'ALL' | 'GELIR' | 'GIDER'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,7 +101,11 @@ export const CashFlowView: React.FC = () => {
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || formData.amount <= 0) {
-      alert('Lütfen geçerli bir tutar giriniz.');
+      alert({
+        title: 'Geçersiz Tutar',
+        message: 'Lütfen 0\'dan büyük geçerli bir tutar giriniz.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -136,8 +142,15 @@ export const CashFlowView: React.FC = () => {
     });
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bu kasa hareketini silmek istediğinize emin misiniz?')) {
+  const handleDelete = async (id: string) => {
+    const isConfirmed = await confirm({
+      title: 'Kasa Hareketini Sil',
+      message: 'Bu kasa hareketini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       storage.deleteCashTransaction(id);
       refreshTransactions();
     }

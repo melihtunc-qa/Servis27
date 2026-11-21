@@ -21,8 +21,10 @@ import {
 } from 'lucide-react';
 import { storage, defaultSettings } from '../services/storage';
 import { ShopSettings } from '../types';
+import { useModal } from '../context/ModalContext';
 
 export const SettingsView: React.FC = () => {
+  const { confirm } = useModal();
   const [settings, setSettings] = useState<ShopSettings>(() => storage.getSettings());
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -117,8 +119,15 @@ export const SettingsView: React.FC = () => {
     e.target.value = '';
   };
 
-  const handleResetDemoData = () => {
-    if (confirm('Tüm veriler sıfırlanıp fabrika demo başlangıç verileri (3 Müşteri, 4 Araç, 6 Stok) yüklenecek. Emin misiniz?')) {
+  const handleResetDemoData = async () => {
+    const isConfirmed = await confirm({
+      title: 'Fabrika Demo Verilerine Sıfırla',
+      message: 'Tüm mevcut veriler sıfırlanıp standart fabrika demo başlangıç verileri (3 Müşteri, 4 Araç, 6 Stok) yüklenecek. Emin misiniz?',
+      confirmText: 'Evet, Demo Verileri Yükle',
+      cancelText: 'Vazgeç',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       storage.resetToFactoryDefaults();
       setSeedStatus('✓ Tüm veriler standart fabrika demo verilerine sıfırlandı!');
       setTimeout(() => {
@@ -127,8 +136,15 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  const handleClearAllData = () => {
-    if (confirm('DİKKAT: Tüm müşteri, araç, stok ve servis kayıtları kalıcı olarak silinecektir (0 Kayıt - Boş Veritabanı). Onaylıyor musunuz?')) {
+  const handleClearAllData = async () => {
+    const isConfirmed = await confirm({
+      title: 'Veritabanını Tamamen Sıfırla',
+      message: 'DİKKAT: Tüm müşteri, araç, stok ve servis kayıtları kalıcı olarak silinecektir (0 Kayıt - Boş Veritabanı). Onaylıyor musunuz?',
+      confirmText: 'Kalıcı Olarak Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       storage.clearAllData();
       setSeedStatus('✓ Tüm veriler tamamen temizlendi! Sıfır kayıtla boş veritabanı hazır.');
       setTimeout(() => {

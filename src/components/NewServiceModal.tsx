@@ -16,6 +16,7 @@ import {
 import { storage } from '../services/storage';
 import { Vehicle, Customer, ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, ItemType, StockItem } from '../types';
 import { matchPlateSearch } from '../utils/plate';
+import { useModal } from '../context/ModalContext';
 
 interface NewServiceModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   preSelectedVehicle,
   recordToEdit,
 }) => {
+  const { alert } = useModal();
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();
   const stockItems = storage.getStockItems();
@@ -245,11 +247,19 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicle || !selectedCustomer) {
-      alert('Lütfen geçerli bir araç seçiniz.');
+      alert({
+        title: 'Araç Seçimi Eksik',
+        message: 'Lütfen geçerli bir araç seçiniz.',
+        variant: 'warning',
+      });
       return;
     }
     if (!complaint) {
-      alert('Lütfen müşteri talebini / şikayetini giriniz.');
+      alert({
+        title: 'Müşteri Talebi Eksik',
+        message: 'Lütfen müşteri talebini / şikayetini giriniz.',
+        variant: 'warning',
+      });
       return;
     }
 
