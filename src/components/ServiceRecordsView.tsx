@@ -295,7 +295,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
           {[
             { id: 'ALL', label: 'Tüm Kayıtlar' },
-            { id: 'ISLEMDE', label: 'İşlemde Olanlar' },
+            { id: 'ISLEMDE', label: 'İşlemde & Liftte Olanlar' },
             { id: 'KABUL_EDILDI', label: 'Kabul Edildi' },
             { id: 'PARCA_BEKLENIYOR', label: 'Parça Bekleyen' },
             { id: 'TAMAMLANDI', label: 'Tamamlandı' },
