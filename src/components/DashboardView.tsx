@@ -77,15 +77,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const getStatusBadge = (status: ServiceRecord['status']) => {
     switch (status) {
       case 'KABUL_EDILDI':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-700 text-slate-200 whitespace-nowrap inline-block text-center">Kabul Edildi</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-slate-700 text-slate-200 whitespace-nowrap inline-block text-center">Kabul Edildi</span>;
       case 'ISLEMDE':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse whitespace-nowrap inline-block text-center">İşlemde</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse whitespace-nowrap inline-block text-center">İşlemde</span>;
       case 'PARCA_BEKLENIYOR':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap inline-block text-center">Parça Bekleniyor</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap inline-block text-center">Parça Bekliyor</span>;
       case 'TAMAMLANDI':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap inline-block text-center">Tamamlandı</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap inline-block text-center">Tamamlandı</span>;
       case 'TESLIM_EDILDI':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 whitespace-nowrap inline-block text-center">Teslim Edildi</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 whitespace-nowrap inline-block text-center">Teslim Edildi</span>;
       default:
         return null;
     }
@@ -207,19 +207,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950/90 backdrop-blur text-slate-400 text-xs uppercase font-semibold sticky top-0 z-10">
+          <div className="overflow-y-auto overflow-x-hidden max-h-[640px]">
+            <table className="w-full text-left text-sm table-fixed">
+              <thead className="bg-slate-950/95 backdrop-blur text-slate-400 text-xs uppercase font-semibold sticky top-0 z-10">
                 <tr>
-                  <th className="py-3 px-3 rounded-l-lg">Plaka / Araç</th>
-                  <th className="py-3 px-3">Müşteri</th>
-                  <th className="py-3 px-3">İşlem / Şikayet</th>
-                  <th className="py-3 px-3.5 min-w-[145px] whitespace-nowrap">Durum</th>
-                  <th className="py-3 px-3">Tutar</th>
-                  <th className="py-3 px-3 text-right rounded-r-lg">Eylem</th>
+                  <th className="py-3 px-2.5 w-[22%] rounded-l-lg">Plaka / Araç</th>
+                  <th className="py-3 px-2 w-[18%]">Müşteri</th>
+                  <th className="py-3 px-2.5 w-[33%]">İşlem / Şikayet</th>
+                  <th className="py-3 px-1.5 w-[15%] text-center">Durum</th>
+                  <th className="py-3 px-2 w-[12%] text-right">Tutar</th>
+                  <th className="py-3 px-1.5 w-9 text-right rounded-r-lg"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-800/80">
                 {stats.recentRecords.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-slate-500">
@@ -231,36 +231,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     const vehicle = vehicles.find(v => v.id === record.vehicleId);
                     return (
                       <tr key={record.id} className="hover:bg-slate-800/40 transition">
-                        <td className="py-3 px-3">
+                        <td className="py-2.5 px-2.5 align-middle">
                           <button
                             onClick={() => vehicle && onSelectVehicle(vehicle)}
-                            className="text-left font-mono font-bold text-blue-400 hover:underline block"
+                            className="text-left font-mono font-bold text-xs sm:text-sm text-blue-400 hover:underline block truncate"
+                            title={`${getVehiclePlate(record.vehicleId)} detaylarını gör`}
                           >
                             {getVehiclePlate(record.vehicleId)}
                           </button>
-                          <span className="text-xs text-slate-400 block">
+                          <span className="text-[11px] text-slate-400 block truncate" title={`${vehicle?.brand || ''} ${vehicle?.model || ''}`}>
                             {vehicle?.brand} {vehicle?.model}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-slate-200">
-                          {getCustomerName(record.customerId)}
+                        <td className="py-2.5 px-2 align-middle">
+                          <span className="text-xs sm:text-sm text-slate-200 block truncate" title={getCustomerName(record.customerId)}>
+                            {getCustomerName(record.customerId)}
+                          </span>
                         </td>
-                        <td className="py-3 px-3 text-slate-300 max-w-xs truncate">
-                          {record.complaint}
+                        <td className="py-2.5 px-2.5 align-middle">
+                          <p 
+                            className="text-xs text-slate-300 leading-snug line-clamp-2 break-words"
+                            title={record.complaint}
+                          >
+                            {record.complaint || 'Belirtilmedi'}
+                          </p>
                         </td>
-                        <td className="py-3 px-3.5 min-w-[145px] whitespace-nowrap">
+                        <td className="py-2.5 px-1.5 align-middle text-center">
                           {getStatusBadge(record.status)}
                         </td>
-                        <td className="py-3 px-3 font-semibold text-slate-100">
-                          ₺{record.grandTotal.toLocaleString('tr-TR')}
+                        <td className="py-2.5 px-2 align-middle text-right font-semibold text-xs sm:text-sm text-slate-100 font-mono whitespace-nowrap">
+                          ₺{(record.grandTotal || 0).toLocaleString('tr-TR')}
                         </td>
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-2.5 px-1.5 align-middle text-right">
                           <button
                             onClick={() => onOpenServiceDetail(record)}
                             className="p-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition"
                             title="İş Emrini İncele"
                           >
-                            <FileText className="w-4 h-4" />
+                            <FileText className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
