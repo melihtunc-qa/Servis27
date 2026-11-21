@@ -74,7 +74,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('ODENDI');
   const [paymentMethod, setPaymentMethod] = useState<'NAKIT' | 'KREDI_KARTI' | 'HAVALE' | 'ACIK_HESAP'>('NAKIT');
 
-  // Service items (parts and labor)
+  // Service items (parts and labor) - starts empty by default
   const [items, setItems] = useState<Array<{
     id: string;
     itemType: ItemType;
@@ -83,25 +83,24 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
     unitPrice: number;
     costPrice: number;
     stockItemId?: string;
-  }>>([
-    {
-      id: 'item-1',
-      itemType: 'PARCA',
-      name: 'Castrol Edge 5W-30 LL Motor Yağı 4L',
-      quantity: 1,
-      unitPrice: 1850,
-      costPrice: 1350,
-      stockItemId: 'stk-1',
-    },
-    {
-      id: 'item-2',
-      itemType: 'ISCILIK',
-      name: 'Periyodik Bakım İşçiliği',
-      quantity: 1,
-      unitPrice: 1000,
-      costPrice: 0,
-    },
-  ]);
+  }>>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setItems([]);
+      setDiscount(0);
+      setPaidAmount(0);
+      setComplaint('');
+      setDiagnosis('');
+      if (preSelectedVehicle) {
+        setSelectedVehicleId(preSelectedVehicle.id);
+        setEntryKm(preSelectedVehicle.currentKm);
+      } else if (vehicles[0]) {
+        setSelectedVehicleId(vehicles[0].id);
+        setEntryKm(vehicles[0].currentKm);
+      }
+    }
+  }, [isOpen, preSelectedVehicle]);
 
   if (!isOpen) return null;
 
@@ -320,7 +319,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Plaka (örn: 34VR), marka, model veya müşteri..."
+                      placeholder="Plaka , Marka, Model veya Müşteri Aratın"
                       value={vehicleSearchQuery}
                       onChange={(e) => setVehicleSearchQuery(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-medium"
@@ -499,7 +498,20 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {items.map((item, index) => {
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-500 text-xs">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <Package className="w-6 h-6 text-slate-600 mb-1" />
+                          <p className="font-medium text-slate-400">Henüz parça veya işçilik eklenmedi.</p>
+                          <p className="text-[11px] text-slate-500">
+                            Yukarıdaki <strong className="text-emerald-400 font-normal">+ Stoktan Parça Ekle</strong>, <strong className="text-cyan-400 font-normal">+ Manuel Parça</strong> veya <strong className="text-amber-400 font-normal">+ İşçilik Ekle</strong> butonlarını kullanarak ekleyebilirsiniz.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item, index) => {
                     const rowTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
                     const linkedStock = item.stockItemId ? stockItems.find(s => s.id === item.stockItemId) : null;
                     const isOutOfStock = linkedStock && linkedStock.quantity < Number(item.quantity);
@@ -609,7 +621,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                         </td>
                       </tr>
                     );
-                  })}
+                  }))}
                 </tbody>
               </table>
             </div>
