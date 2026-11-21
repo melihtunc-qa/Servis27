@@ -238,26 +238,29 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                 <p className="text-[10px]">{new Date().toLocaleString('tr-TR')}</p>
               </div>
 
-              <div>
+              <div className="space-y-0.5">
                 <p><strong>PLAKA:</strong> {getVehicle(activeRecord.vehicleId)?.plate}</p>
-                <p><strong>ARAÇ:</strong> {getVehicle(activeRecord.vehicleId)?.brand} {getVehicle(activeRecord.vehicleId)?.model}</p>
+                <p className="break-words"><strong>ARAÇ:</strong> {getVehicle(activeRecord.vehicleId)?.brand} {getVehicle(activeRecord.vehicleId)?.model}</p>
                 <p><strong>KM:</strong> {activeRecord.entryKm.toLocaleString('tr-TR')} KM</p>
-                <p><strong>MÜŞTERİ:</strong> {getCustomer(activeRecord.customerId)?.fullName}</p>
+                <p className="break-words"><strong>MÜŞTERİ:</strong> {getCustomer(activeRecord.customerId)?.fullName}</p>
               </div>
 
-              <div className="border-t border-b border-black py-2 space-y-1">
+              <div className="border-t border-b border-black py-2 space-y-1.5">
                 {activeRecord.items.map((it, i) => (
-                  <div key={i} className="flex justify-between">
-                    <span className="truncate max-w-[170px]">{it.quantity}x {it.name}</span>
-                    <span>₺{it.totalPrice}</span>
+                  <div key={i} className="flex justify-between items-start gap-2">
+                    <span className="flex-1 break-words leading-tight">{it.quantity}x {it.name}</span>
+                    <span className="shrink-0 font-medium text-right">₺{it.totalPrice.toLocaleString('tr-TR')}</span>
                   </div>
                 ))}
               </div>
 
               <div className="space-y-1 text-right">
-                <p className="font-bold text-sm">TOPLAM: ₺{activeRecord.grandTotal}</p>
-                <p>ÖDENEN: ₺{activeRecord.paidAmount}</p>
-                <p>KALAN: ₺{Math.max(0, activeRecord.grandTotal - activeRecord.paidAmount)}</p>
+                {activeRecord.discount > 0 && (
+                  <p className="text-[11px]">İSKONTO: -₺{activeRecord.discount.toLocaleString('tr-TR')}</p>
+                )}
+                <p className="font-bold text-sm">TOPLAM: ₺{activeRecord.grandTotal.toLocaleString('tr-TR')}</p>
+                <p>ÖDENEN: ₺{activeRecord.paidAmount.toLocaleString('tr-TR')}</p>
+                <p>KALAN: ₺{Math.max(0, activeRecord.grandTotal - activeRecord.paidAmount).toLocaleString('tr-TR')}</p>
               </div>
 
               <div className="border-t border-black pt-2 text-center text-[10px]">
