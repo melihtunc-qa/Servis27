@@ -891,7 +891,9 @@ class StorageService {
     const lowStock = this.getLowStockItems();
     const cash = this.getCashTransactions();
 
-    const activeServices = records.filter(r => r.status === 'ISLEMDE' || r.status === 'KABUL_EDILDI' || r.status === 'PARCA_BEKLENIYOR');
+    const inProgressServices = records.filter(r => r.status === 'ISLEMDE');
+    const acceptedServices = records.filter(r => r.status === 'KABUL_EDILDI');
+    const waitingPartsServices = records.filter(r => r.status === 'PARCA_BEKLENIYOR');
     const totalReceivables = customers.reduce((sum, c) => sum + (c.balance > 0 ? c.balance : 0), 0);
     const totalRevenue = records.reduce((sum, r) => sum + (r.paidAmount || 0), 0);
 
@@ -902,7 +904,9 @@ class StorageService {
     return {
       customerCount: customers.length,
       vehicleCount: vehicles.length,
-      activeServiceCount: activeServices.length,
+      activeServiceCount: inProgressServices.length,
+      acceptedServiceCount: acceptedServices.length,
+      waitingPartsCount: waitingPartsServices.length,
       totalReceivables,
       totalRevenue,
       remindersCount: reminders.length,

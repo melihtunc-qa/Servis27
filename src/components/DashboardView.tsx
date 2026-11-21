@@ -86,7 +86,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Aktif İşler */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-blue-500/40 transition">
+        <div 
+          onClick={() => onNavigate('services')}
+          className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-blue-500/40 transition cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Aktif İşler</p>
@@ -96,8 +99,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Wrench className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-3 flex items-center text-xs text-slate-400">
-            <span className="text-amber-400 font-medium mr-1.5">Liftte ve işlemde</span> olan araçlar
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+            <div>
+              <span className="text-amber-400 font-medium mr-1.5">Liftte ve işlemde</span> olan araçlar
+            </div>
+            {stats.acceptedServiceCount > 0 && (
+              <span className="text-[11px] text-slate-500 font-medium">
+                ({stats.acceptedServiceCount} kabul bekliyor)
+              </span>
+            )}
           </div>
         </div>
 

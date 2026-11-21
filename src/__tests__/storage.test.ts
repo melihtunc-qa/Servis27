@@ -335,6 +335,32 @@ describe('Storage & Repository Integration Tests', () => {
     });
   });
 
+  describe('Dashboard Stats & Active Services Invariant', () => {
+    it('should strictly count only ISLEMDE (liftte ve islemde) for activeServiceCount and exclude KABUL_EDILDI', () => {
+      // Create records with different statuses
+      const baseRecord = storage.getServiceRecords()[0];
+      assert.ok(baseRecord);
+
+      const testRecords = [
+        { ...baseRecord, id: 'test-srv-kabul', status: 'KABUL_EDILDI' as const },
+        { ...baseRecord, id: 'test-srv-islemde-1', status: 'ISLEMDE' as const },
+        { ...baseRecord, id: 'test-srv-islemde-2', status: 'ISLEMDE' as const },
+        { ...baseRecord, id: 'test-srv-parca', status: 'PARCA_BEKLENIYOR' as const },
+        { ...baseRecord, id: 'test-srv-tamamlandi', status: 'TAMAMLANDI' as const },
+        { ...baseRecord, id: 'test-srv-teslim', status: 'TESLIM_EDILDI' as const },
+      ];
+
+      localStorage.setItem('servis365_service_records', JSON.stringify(testRecords));
+
+      const stats = storage.getDashboardStats();
+
+      // activeServiceCount must be exactly 2 (only the 2 ISLEMDE records)
+      assert.strictEqual(stats.activeServiceCount, 2, 'activeServiceCount must strictly count only ISLEMDE records');
+      assert.strictEqual(stats.acceptedServiceCount, 1, 'acceptedServiceCount must count KABUL_EDILDI records');
+      assert.strictEqual(stats.waitingPartsCount, 1, 'waitingPartsCount must count PARCA_BEKLENIYOR records');
+    });
+  });
+
   describe('Backup & Restore (Export / Import)', () => {
     it('should export full database backup into valid JSON structure', () => {
       const backupJson = storage.exportBackup();

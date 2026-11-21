@@ -32,7 +32,7 @@ export const App: React.FC = () => {
   // Stats for badge
   const reminders = storage.getReminders().filter(r => r.status === 'YAKLASAN');
   const activeServices = storage.getServiceRecords().filter(
-    r => r.status === 'ISLEMDE' || r.status === 'PARCA_BEKLENIYOR'
+    r => r.status === 'ISLEMDE'
   );
   const lowStock = storage.getLowStockItems();
 
