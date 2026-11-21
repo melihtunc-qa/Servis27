@@ -1,7 +1,8 @@
 {
   "name": "servis365",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.5.0",
+  "author": "Melih Tunç",
   "type": "module",
   "scripts": {
     "dev": "vite",

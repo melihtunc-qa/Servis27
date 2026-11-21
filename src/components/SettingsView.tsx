@@ -482,6 +482,32 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* App & Developer Info Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+              <ShieldCheck className="w-4 h-4 text-blue-400" />
+              <h4 className="font-bold text-white text-xs uppercase tracking-wide">Uygulama & Sürüm Bilgisi</h4>
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Yazılım:</span>
+                <span className="font-semibold text-slate-200">Servis365 Masaüstü</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Sürüm:</span>
+                <span className="font-mono font-bold text-emerald-400">v1.5.0</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Geliştirici:</span>
+                <span className="font-medium text-blue-400">Melih Tunç</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400">Çalışma Tipi:</span>
+                <span className="text-slate-300">Taşınabilir (Portable / Çevrimdışı SQLite)</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
