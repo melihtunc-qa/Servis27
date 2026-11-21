@@ -7,11 +7,12 @@
     @apply bg-slate-950 text-slate-100 min-h-screen font-sans;
   }
 
-  /* Placeholder typography: mevcuttakinden 2 punto (2pt) daha küçük */
+  /* Placeholder typography: mevcuttakinden 2 punto (2pt) daha küçük ve italik */
   ::placeholder,
   input::placeholder,
   textarea::placeholder {
     font-size: calc(1em - 2pt) !important;
+    font-style: italic !important;
   }
 }
 
