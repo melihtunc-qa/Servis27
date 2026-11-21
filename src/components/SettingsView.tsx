@@ -12,7 +12,9 @@ import {
   FileText,
   Layers,
   Car,
-  Package
+  Package,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { storage, defaultSettings } from '../services/storage';
 import { ShopSettings } from '../types';
@@ -22,6 +24,9 @@ export const SettingsView: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [seedStatus, setSeedStatus] = useState<string | null>(null);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [backupDownloaded, setBackupDownloaded] = useState(false);
   const [, setVersion] = useState(0);
 
   useEffect(() => {
@@ -56,24 +61,33 @@ export const SettingsView: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setRestoreError(null);
     const reader = new FileReader();
     reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const success = storage.importBackup(content);
-      if (success) {
-        setImportStatus('Veritabanı başarıyla geri yüklendi! Sayfa yenileniyor...');
-        setTimeout(() => {
-          window.location.reload();
-        }, 1200);
-      } else {
-        setImportStatus('Hata: Geçersiz yedek dosyası formatı!');
+      try {
+        const content = event.target?.result as string;
+        const success = storage.importBackup(content);
+        if (success) {
+          setImportStatus('✓ Veritabanı başarıyla geri yüklendi! Sistem yenileniyor...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1200);
+        } else {
+          setRestoreError('Hata: Seçilen dosya geçerli bir Servis365 yedeği değil veya bozuk format içeriyor!');
+        }
+      } catch (err) {
+        setRestoreError('Hata: Dosya okunurken veya işlenirken bir sorun oluştu.');
       }
     };
+    reader.onerror = () => {
+      setRestoreError('Hata: Dosya okunamadı!');
+    };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleResetDemoData = () => {
@@ -292,19 +306,21 @@ export const SettingsView: React.FC = () => {
                 Veritabanı Yedeği İndir (.json)
               </button>
 
-              <label className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 rounded-xl text-xs font-medium transition cursor-pointer">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRestoreModalOpen(true);
+                  setRestoreError(null);
+                  setBackupDownloaded(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 rounded-xl text-xs font-medium transition shadow-sm active:scale-98"
+              >
                 <Upload className="w-4 h-4 text-emerald-400" />
                 <span>Yedekten Geri Yükle</span>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportBackup}
-                  className="hidden"
-                />
-              </label>
+              </button>
 
               {importStatus && (
-                <p className="text-xs font-medium text-center text-amber-400 pt-1">
+                <p className="text-xs font-medium text-center text-emerald-400 pt-1 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-lg">
                   {importStatus}
                 </p>
               )}
@@ -379,6 +395,131 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Restore Confirmation Modal (Ön Doğrulama Ekranı) */}
+      {isRestoreModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Yedekten Geri Yükleme Doğrulaması</h3>
+                  <p className="text-[11px] text-slate-400">Veritabanı içeri aktarma işlemi</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRestoreModalOpen(false);
+                  setRestoreError(null);
+                }}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Prominent Warning Alert */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-amber-300 leading-snug">
+                    Geri Yükleme İşlemi Mevcut Verilerinizin Değişmesine Sebep Olabilir , Bu Yüzden Önce Yedekleme Yapınız
+                  </h4>
+                  <p className="text-xs text-amber-200/80 leading-relaxed">
+                    Yedekten geri yükleme yapıldığında mevcut müşteri, araç, stok, iş emri ve kasa kayıtlarınız seçilen yedek dosyasındaki verilerle güncellenecektir.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 1: Backup Recommendation Action */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-[11px] flex items-center justify-center font-bold">1</span>
+                    Önlem: Mevcut Verilerinizin Yedeğini Alın
+                  </span>
+                  {backupDownloaded && (
+                    <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Yedek İndirildi
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Olası veri kaybına karşı mevcut veritabanınızın güncel .json yedeğini tek tıkla bilgisayarınıza indirin.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleExportBackup();
+                    setBackupDownloaded(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition shadow-sm active:scale-98"
+                >
+                  <Download className="w-4 h-4 text-blue-400" />
+                  Şimdi Mevcut Verilerin Yedeğini İndir (.json)
+                </button>
+              </div>
+
+              {/* Step 2: Choose Backup File & Restore */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5">
+                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] flex items-center justify-center font-bold">2</span>
+                  Geri Yüklenecek Yedek Dosyasını (.json) Seçin
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  Önceden indirilmiş geçerli Servis365 yedek dosyanızı seçerek yükleme işlemini başlatın.
+                </p>
+
+                <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-md shadow-emerald-600/20 active:scale-98">
+                  <Upload className="w-4 h-4" />
+                  <span>Yedek Dosyasını Seç (.json) ve Geri Yükle</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileSelected}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Status / Error feedback */}
+              {restoreError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{restoreError}</span>
+                </div>
+              )}
+
+              {importStatus && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>{importStatus}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRestoreModalOpen(false);
+                  setRestoreError(null);
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition"
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
