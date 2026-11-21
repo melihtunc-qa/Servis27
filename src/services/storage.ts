@@ -575,10 +575,84 @@ class StorageService {
   }
 
   deleteCashTransaction(id: string): boolean {
-    const list = this.getCashTransactions().filter(t => t.id !== id);
-    localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(list));
+    const list = this.getCashTransactions();
+    const tx = list.find(t => t.id === id);
+    if (!tx) return false;
+
+    // If it was a customer debt collection without direct service creation, restore the customer balance
+    if (tx.relatedCustomerId && tx.type === 'GELIR' && !tx.relatedServiceId) {
+      const customer = this.getCustomer(tx.relatedCustomerId);
+      if (customer) {
+        customer.balance = Math.round((customer.balance + tx.amount) * 100) / 100;
+        this.saveCustomer(customer);
+      }
+    }
+
+    const filtered = list.filter(t => t.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(filtered));
     this.notifyListeners();
     return true;
+  }
+
+  /**
+   * Borçlu müşteriden kasa girişi ile cari borç tahsilatı yapar.
+   * - Müşterinin açık/ödenmemiş servis kayıtlarını sırayla kapatır
+   * - Müşteri cari borç bakiyesini (customer.balance) düşer
+   * - Kasa defterine GELIR kaydı işler
+   */
+  collectCustomerDebt(params: {
+    customerId: string;
+    amount: number;
+    paymentMethod: 'NAKIT' | 'KREDI_KARTI' | 'HAVALE';
+    description?: string;
+  }): { transaction: CashTransaction; newBalance: number } {
+    const customer = this.getCustomer(params.customerId);
+    if (!customer) throw new Error('Müşteri bulunamadı.');
+
+    const amount = Math.max(0, Number(params.amount) || 0);
+    if (amount <= 0) throw new Error('Geçersiz tahsilat tutarı.');
+
+    // 1. Müşterinin ödenmemiş servis kayıtlarını en eskiden en yeniye sırayla kapat
+    const allRecords = this.getServiceRecords();
+    const customerRecords = allRecords
+      .filter(r => r.customerId === params.customerId && (r.grandTotal - (r.paidAmount || 0)) > 0)
+      .sort((a, b) => new Date(a.entryDate || a.createdAt).getTime() - new Date(b.entryDate || b.createdAt).getTime());
+
+    let remainingToCover = amount;
+    for (const rec of customerRecords) {
+      if (remainingToCover <= 0) break;
+      const unpaid = Math.max(0, rec.grandTotal - (rec.paidAmount || 0));
+      const payThis = Math.min(unpaid, remainingToCover);
+      rec.paidAmount = (rec.paidAmount || 0) + payThis;
+      remainingToCover -= payThis;
+      if (rec.paidAmount >= rec.grandTotal) {
+        rec.paymentStatus = 'ODENDI';
+      } else {
+        rec.paymentStatus = 'KISMI_ODENDI';
+      }
+    }
+    localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(allRecords));
+
+    // 2. Müşteri borç bakiyesinden girilen tutarı düş
+    const updatedBalance = Math.max(0, Math.round((customer.balance - amount) * 100) / 100);
+    customer.balance = updatedBalance;
+    this.saveCustomer(customer);
+
+    // 3. Kasa defterine gelir hareketi işle
+    const tx: CashTransaction = {
+      id: `csh-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      date: new Date().toISOString(),
+      type: 'GELIR',
+      category: 'SERVIS_TAHSILAT',
+      amount: amount,
+      paymentMethod: params.paymentMethod,
+      description: params.description || `${customer.fullName} - Cari Borç Tahsilatı`,
+      relatedCustomerId: customer.id,
+    };
+    this.saveCashTransaction(tx);
+
+    this.notifyListeners();
+    return { transaction: tx, newBalance: customer.balance };
   }
 
   // --- Service Records ---
@@ -641,7 +715,7 @@ class StorageService {
       const plate = vehicle?.plate || '';
       const custName = customer?.fullName || '';
       this.saveCashTransaction({
-        id: `csh-${Date.now()}`,
+        id: `csh-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         date: new Date().toISOString(),
         type: 'GELIR',
         category: 'SERVIS_TAHSILAT',

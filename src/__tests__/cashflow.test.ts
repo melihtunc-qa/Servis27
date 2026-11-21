@@ -188,4 +188,109 @@ describe('Cash Flow & Register Transactions Tests', () => {
       assert.equal(transactions.length, initialTxCount, 'No cash transaction should be created for 0 paidAmount');
     });
   });
+
+  describe('Customer Debt Collection via Cash Inflow (collectCustomerDebt)', () => {
+    it('should collect debt, reduce customer balance and credit unpaid service records', () => {
+      // 1. Create a dedicated customer with debt and an unpaid service record
+      const testCustomer = {
+        id: 'cust-debt-test',
+        fullName: 'Test Borçlu Müşteri',
+        phone: '0555 123 45 67',
+        balance: 1500,
+        createdAt: new Date().toISOString(),
+      };
+      storage.saveCustomer(testCustomer as any);
+
+      const unpaidRecord: ServiceRecord = {
+        id: 'srv-debt-test-1',
+        vehicleId: 'veh-1',
+        customerId: 'cust-debt-test',
+        entryDate: new Date().toISOString(),
+        entryKm: 120000,
+        complaint: 'Açık hesap bakım',
+        status: 'TAMAMLANDI',
+        items: [],
+        partsTotal: 1500,
+        laborTotal: 500,
+        discount: 0,
+        grandTotal: 2000,
+        paidAmount: 500,
+        paymentStatus: 'KISMI_ODENDI',
+        createdAt: new Date().toISOString(),
+      };
+      storage.saveServiceRecord(unpaidRecord);
+
+      // Verify customer debt before collection
+      const custBefore = storage.getCustomer('cust-debt-test');
+      assert.ok(custBefore);
+      assert.equal(custBefore.balance, 1500);
+      const initialCashCount = storage.getCashTransactions().length;
+
+      // 2. Collect 1000 TL from customer debt
+      const result = storage.collectCustomerDebt({
+        customerId: 'cust-debt-test',
+        amount: 1000,
+        paymentMethod: 'KREDI_KARTI',
+        description: 'Test Borçlu - POS Cari Tahsilat',
+      });
+
+      // Assertions
+      assert.equal(result.newBalance, 500);
+      const custAfter = storage.getCustomer('cust-debt-test');
+      assert.equal(custAfter?.balance, 500);
+
+      // Verify cash transaction
+      const cashList = storage.getCashTransactions();
+      assert.equal(cashList.length, initialCashCount + 1);
+      const debtTx = cashList[0];
+      assert.equal(debtTx.type, 'GELIR');
+      assert.equal(debtTx.amount, 1000);
+      assert.equal(debtTx.paymentMethod, 'KREDI_KARTI');
+      assert.equal(debtTx.relatedCustomerId, 'cust-debt-test');
+
+      // Verify service record paidAmount was credited
+      const recordAfter = storage.getServiceRecord('srv-debt-test-1');
+      assert.ok(recordAfter);
+      assert.equal(recordAfter.paidAmount, 1500, 'Original 500 + 1000 collected = 1500 TL');
+      assert.equal(recordAfter.paymentStatus, 'KISMI_ODENDI');
+
+      // 3. Collect the remaining 500 TL
+      storage.collectCustomerDebt({
+        customerId: 'cust-debt-test',
+        amount: 500,
+        paymentMethod: 'NAKIT',
+      });
+
+      const recordFullyPaid = storage.getServiceRecord('srv-debt-test-1');
+      assert.equal(recordFullyPaid?.paidAmount, 2000);
+      assert.equal(recordFullyPaid?.paymentStatus, 'ODENDI', 'Should transition to ODENDI when debt is fully covered');
+      assert.equal(storage.getCustomer('cust-debt-test')?.balance, 0);
+    });
+
+    it('should restore customer debt if debt collection transaction is deleted', () => {
+      const testCustomer = {
+        id: 'cust-debt-restore-test',
+        fullName: 'Restore Test Müşteri',
+        phone: '0555 999 88 77',
+        balance: 1000,
+        createdAt: new Date().toISOString(),
+      };
+      storage.saveCustomer(testCustomer as any);
+
+      const result = storage.collectCustomerDebt({
+        customerId: 'cust-debt-restore-test',
+        amount: 400,
+        paymentMethod: 'NAKIT',
+      });
+
+      assert.equal(storage.getCustomer('cust-debt-restore-test')?.balance, 600);
+
+      // Delete this transaction
+      const deleted = storage.deleteCashTransaction(result.transaction.id);
+      assert.equal(deleted, true);
+
+      // Verify customer balance was restored
+      assert.equal(storage.getCustomer('cust-debt-restore-test')?.balance, 1000);
+    });
+  });
 });

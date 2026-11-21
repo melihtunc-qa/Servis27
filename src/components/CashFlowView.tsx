@@ -11,15 +11,21 @@ import {
   Banknote, 
   Building2,
   X,
-  Trash2
+  Trash2,
+  Search,
+  User,
+  Check,
+  Users
 } from 'lucide-react';
 import { storage } from '../services/storage';
-import { CashTransaction } from '../types';
+import { CashTransaction, Customer } from '../types';
 
 export const CashFlowView: React.FC = () => {
   const [transactions, setTransactions] = useState<CashTransaction[]>(() => storage.getCashTransactions());
   const [filterType, setFilterType] = useState<'ALL' | 'GELIR' | 'GIDER'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDebtorId, setSelectedDebtorId] = useState<string | null>(null);
+  const [debtorSearchQuery, setDebtorSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     type: 'GELIR' as 'GELIR' | 'GIDER',
@@ -39,11 +45,56 @@ export const CashFlowView: React.FC = () => {
     });
   }, []);
 
+  const customers = storage.getCustomers();
+  const debtorCustomers = customers
+    .filter(c => c.balance > 0)
+    .sort((a, b) => b.balance - a.balance);
+
+  const filteredDebtors = debtorCustomers.filter(c => {
+    if (!debtorSearchQuery.trim()) return true;
+    const q = debtorSearchQuery.trim().toLowerCase();
+    return c.fullName.toLowerCase().includes(q) || (c.phone && c.phone.includes(q));
+  });
+
+  const selectedCustomer = selectedDebtorId ? customers.find(c => c.id === selectedDebtorId) : null;
+
   const totalIncome = transactions.filter(t => t.type === 'GELIR').reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'GIDER').reduce((s, t) => s + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
   const filtered = transactions.filter(t => filterType === 'ALL' || t.type === filterType);
+
+  const handleOpenModal = () => {
+    setSelectedDebtorId(null);
+    setDebtorSearchQuery('');
+    setFormData({
+      type: 'GELIR',
+      category: 'SERVIS_TAHSILAT',
+      amount: 0,
+      paymentMethod: 'NAKIT',
+      description: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSelectDebtor = (c: Customer) => {
+    if (selectedDebtorId === c.id) {
+      setSelectedDebtorId(null);
+      setFormData(prev => ({
+        ...prev,
+        amount: 0,
+        description: '',
+      }));
+    } else {
+      setSelectedDebtorId(c.id);
+      setFormData(prev => ({
+        ...prev,
+        category: 'SERVIS_TAHSILAT',
+        amount: c.balance,
+        description: `${c.fullName} - Cari Borç Tahsilatı`,
+      }));
+    }
+  };
 
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,19 +103,37 @@ export const CashFlowView: React.FC = () => {
       return;
     }
 
-    const newTx: CashTransaction = {
-      id: `csh-${Date.now()}`,
-      date: new Date().toISOString(),
-      type: formData.type,
-      category: formData.category,
-      amount: Number(formData.amount),
-      paymentMethod: formData.paymentMethod,
-      description: formData.description || (formData.type === 'GELIR' ? 'Gelir Girişi' : 'Gider Çıkışı'),
-    };
+    if (formData.type === 'GELIR' && selectedDebtorId) {
+      storage.collectCustomerDebt({
+        customerId: selectedDebtorId,
+        amount: Number(formData.amount),
+        paymentMethod: formData.paymentMethod,
+        description: formData.description || `${selectedCustomer?.fullName} - Cari Borç Tahsilatı`,
+      });
+    } else {
+      const newTx: CashTransaction = {
+        id: `csh-${Date.now()}`,
+        date: new Date().toISOString(),
+        type: formData.type,
+        category: formData.category,
+        amount: Number(formData.amount),
+        paymentMethod: formData.paymentMethod,
+        description: formData.description || (formData.type === 'GELIR' ? 'Gelir Girişi' : 'Gider Çıkışı'),
+      };
+      storage.saveCashTransaction(newTx);
+    }
 
-    storage.saveCashTransaction(newTx);
     refreshTransactions();
     setIsModalOpen(false);
+    setSelectedDebtorId(null);
+    setDebtorSearchQuery('');
+    setFormData({
+      type: 'GELIR',
+      category: 'SERVIS_TAHSILAT',
+      amount: 0,
+      paymentMethod: 'NAKIT',
+      description: '',
+    });
   };
 
   const handleDelete = (id: string) => {
@@ -83,7 +152,7 @@ export const CashFlowView: React.FC = () => {
           <p className="text-slate-400 text-sm">Servis tahsilatları, parça alımları, dükkan masrafları ve net kasa durumu</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenModal}
           className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition shadow-md shadow-blue-600/20 active:scale-98"
         >
           <Plus className="w-4 h-4" />
@@ -196,7 +265,12 @@ export const CashFlowView: React.FC = () => {
                       {tx.category.replace(/_/g, ' ')}
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-200 font-medium">
-                      {tx.description}
+                      <div>{tx.description}</div>
+                      {tx.relatedCustomerId && (
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          Cari Borç Tahsilatı
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-400">
                       <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
@@ -227,8 +301,8 @@ export const CashFlowView: React.FC = () => {
       {/* Add Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/40">
               <div className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-blue-400" />
                 <h3 className="font-bold text-lg text-white">Yeni Kasa Hareketi Ekle</h3>
@@ -241,7 +315,7 @@ export const CashFlowView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveTransaction} className="p-5 space-y-4">
+            <form onSubmit={handleSaveTransaction} className="p-5 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -256,7 +330,10 @@ export const CashFlowView: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, type: 'GIDER', category: 'PARCA_ALIMI' })}
+                  onClick={() => {
+                    setSelectedDebtorId(null);
+                    setFormData({ ...formData, type: 'GIDER', category: 'PARCA_ALIMI' });
+                  }}
                   className={`py-2 rounded-xl text-xs font-bold transition border ${
                     formData.type === 'GIDER'
                       ? 'bg-rose-600 text-white border-rose-500'
@@ -266,6 +343,107 @@ export const CashFlowView: React.FC = () => {
                   - Kasa Çıkışı (Gider)
                 </button>
               </div>
+
+              {/* Borçlu Müşteri Seçimi (Sadece Kasa Girişinde) */}
+              {formData.type === 'GELIR' && (
+                <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300 uppercase flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                      Borçlu Müşteriler (Cari Tahsilat)
+                    </label>
+                    <span className="text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      {debtorCustomers.length} Borçlu Kişi
+                    </span>
+                  </div>
+
+                  {selectedCustomer ? (
+                    /* Seçili Müşteri Kartı */
+                    <div className="p-3 bg-blue-950/40 border border-blue-500/40 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            <Check className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-white">{selectedCustomer.fullName}</div>
+                            <div className="text-[11px] text-slate-400">{selectedCustomer.phone}</div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] text-slate-400 block uppercase">Mevcut Borç</span>
+                          <span className="text-sm font-mono font-bold text-rose-400">
+                            ₺{selectedCustomer.balance.toLocaleString('tr-TR')}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDebtorId(null);
+                          setFormData(prev => ({ ...prev, description: '', amount: 0 }));
+                        }}
+                        className="w-full text-center py-1 text-xs text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-850 rounded-lg border border-slate-800 transition"
+                      >
+                        ✕ Seçimi Kaldır (Müşterisiz Genel Gelir Girişi)
+                      </button>
+                    </div>
+                  ) : (
+                    /* Müşteri Arama ve Scrollable Liste */
+                    <div className="space-y-2">
+                      {debtorCustomers.length > 0 ? (
+                        <>
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              placeholder="Borçlu müşteri adı veya telefon ile ara..."
+                              value={debtorSearchQuery}
+                              onChange={(e) => setDebtorSearchQuery(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1 border border-slate-800 rounded-xl p-1.5 bg-slate-950/70">
+                            {filteredDebtors.length === 0 ? (
+                              <div className="p-3 text-center text-xs text-slate-500">
+                                Aramaya uygun borçlu müşteri bulunamadı.
+                              </div>
+                            ) : (
+                              filteredDebtors.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => handleSelectDebtor(c)}
+                                  className="w-full p-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800/80 hover:border-blue-500/50 flex items-center justify-between text-left transition group"
+                                >
+                                  <div className="min-w-0 pr-2">
+                                    <div className="text-xs font-semibold text-slate-200 group-hover:text-white truncate">
+                                      {c.fullName}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 font-mono truncate">
+                                      {c.phone}
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                      ₺{c.balance.toLocaleString('tr-TR')} Borç
+                                    </span>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-3 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+                          Borçlu müşteri bulunmamaktadır (Tüm cariler temiz).
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
@@ -306,7 +484,38 @@ export const CashFlowView: React.FC = () => {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-base font-mono font-bold text-slate-100 focus:outline-none focus:border-blue-500"
                   required
                 />
+                {selectedCustomer && (
+                  <div className="flex items-center gap-2 mt-1.5 text-xs">
+                    <span className="text-slate-400 text-[11px]">Hızlı Tutar:</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, amount: selectedCustomer.balance })}
+                      className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-md font-mono text-[11px]"
+                    >
+                      Tüm Borç (₺{selectedCustomer.balance.toLocaleString('tr-TR')})
+                    </button>
+                    {selectedCustomer.balance > 100 && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, amount: Math.round(selectedCustomer.balance / 2) })}
+                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-md font-mono text-[11px]"
+                      >
+                        Yarısı (₺{Math.round(selectedCustomer.balance / 2).toLocaleString('tr-TR')})
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {selectedCustomer && (
+                <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                  <span className="text-slate-400">Tahsilat Sonrası Kalan Borç:</span>
+                  <span className={`font-mono font-bold ${selectedCustomer.balance - (formData.amount || 0) > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    ₺{Math.max(0, selectedCustomer.balance - (formData.amount || 0)).toLocaleString('tr-TR')}
+                    {selectedCustomer.balance - (formData.amount || 0) <= 0 ? ' (Borç Tamamen Kapanır)' : ' (Kalan Borç)'}
+                  </span>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
@@ -336,7 +545,7 @@ export const CashFlowView: React.FC = () => {
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
