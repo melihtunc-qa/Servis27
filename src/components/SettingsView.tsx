@@ -7,6 +7,7 @@ import {
   Database, 
   ShieldCheck, 
   RefreshCw,
+  Trash2,
   CheckCircle,
   FileText,
   Layers,
@@ -76,9 +77,22 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleResetDemoData = () => {
-    if (confirm('Tüm veriler sıfırlanıp fabrika demo verileri yüklenecek. Emin misiniz?')) {
-      localStorage.clear();
-      window.location.reload();
+    if (confirm('Tüm veriler sıfırlanıp fabrika demo başlangıç verileri (3 Müşteri, 4 Araç, 6 Stok) yüklenecek. Emin misiniz?')) {
+      storage.resetToFactoryDefaults();
+      setSeedStatus('✓ Tüm veriler standart fabrika demo verilerine sıfırlandı!');
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
+    }
+  };
+
+  const handleClearAllData = () => {
+    if (confirm('DİKKAT: Tüm müşteri, araç, stok ve servis kayıtları kalıcı olarak silinecektir (0 Kayıt - Boş Veritabanı). Onaylıyor musunuz?')) {
+      storage.clearAllData();
+      setSeedStatus('✓ Tüm veriler tamamen temizlendi! Sıfır kayıtla boş veritabanı hazır.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
     }
   };
 
@@ -343,13 +357,23 @@ export const SettingsView: React.FC = () => {
               </p>
             )}
 
-            <div className="pt-2 border-t border-slate-800">
+            <div className="pt-2 border-t border-slate-800 space-y-2">
               <button
                 onClick={handleResetDemoData}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-medium transition"
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 border border-amber-800/50 rounded-xl text-xs font-medium transition active:scale-98"
+                title="Sistemi standart demo verilerine (3 müşteri, 4 araç, 6 yedek parça) sıfırlar"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Fabrika Demo Verilerine Sıfırla
+                Fabrika Demo Verilerine Sıfırla (Başlangıç Verileri)
+              </button>
+
+              <button
+                onClick={handleClearAllData}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-medium transition active:scale-98"
+                title="Tüm müşteri, araç, servis ve stok verilerini kalıcı olarak silip boş başlatır"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Tüm Verileri Temizle (Boş Veritabanı - 0 Kayıt)
               </button>
             </div>
           </div>

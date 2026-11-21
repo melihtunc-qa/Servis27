@@ -11,6 +11,9 @@ import type {
   CashTransaction 
 } from '../types/index.ts';
 import {
+  factoryDefaultCustomers,
+  factoryDefaultVehicles,
+  factoryDefaultStockItems,
   generate100Customers,
   generate100Vehicles,
   generate100StockItems,
@@ -50,8 +53,8 @@ const initialTechnicians: Technician[] = [
   { id: 'tech-3', name: 'Serkan Usta', phone: '0535 555 03 03', specialty: 'Oto Elektrik & Arıza Teşhis', isActive: true },
 ];
 
-// Initial Spare Parts Inventory (100 distinct items)
-const initialStockItems: StockItem[] = generate100StockItems();
+// Initial Spare Parts Inventory (Baseline Factory Default)
+const initialStockItems: StockItem[] = factoryDefaultStockItems;
 
 // Pre-defined Maintenance Packages
 const initialPackages: MaintenancePackage[] = [
@@ -94,11 +97,11 @@ const initialPackages: MaintenancePackage[] = [
   },
 ];
 
-// Initial Customers (100 distinct customers)
-const initialCustomers: Customer[] = generate100Customers();
+// Initial Customers (Baseline Factory Default)
+const initialCustomers: Customer[] = factoryDefaultCustomers;
 
-// Initial Vehicles (100 distinct vehicles)
-const initialVehicles: Vehicle[] = generate100Vehicles(initialCustomers);
+// Initial Vehicles (Baseline Factory Default)
+const initialVehicles: Vehicle[] = factoryDefaultVehicles;
 
 // Initial Service Records
 const initialRecords: ServiceRecord[] = [
@@ -329,36 +332,63 @@ class StorageService {
       }
     }
 
-    const existingCustomers = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
-    if (!existingCustomers || JSON.parse(existingCustomers).length < 10) {
+    if (localStorage.getItem(STORAGE_KEYS.CUSTOMERS) === null) {
       localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(initialCustomers));
     }
-    const existingVehicles = localStorage.getItem(STORAGE_KEYS.VEHICLES);
-    if (!existingVehicles || JSON.parse(existingVehicles).length < 10) {
+    if (localStorage.getItem(STORAGE_KEYS.VEHICLES) === null) {
       localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(initialVehicles));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.SERVICE_RECORDS)) {
+    if (localStorage.getItem(STORAGE_KEYS.SERVICE_RECORDS) === null) {
       localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(initialRecords));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.REMINDERS)) {
+    if (localStorage.getItem(STORAGE_KEYS.REMINDERS) === null) {
       localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(initialReminders));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+    if (localStorage.getItem(STORAGE_KEYS.SETTINGS) === null) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
     }
-    const existingStock = localStorage.getItem(STORAGE_KEYS.STOCK_ITEMS);
-    if (!existingStock || JSON.parse(existingStock).length < 10) {
+    if (localStorage.getItem(STORAGE_KEYS.STOCK_ITEMS) === null) {
       localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(initialStockItems));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.PACKAGES)) {
+    if (localStorage.getItem(STORAGE_KEYS.PACKAGES) === null) {
       localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(initialPackages));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.TECHNICIANS)) {
+    if (localStorage.getItem(STORAGE_KEYS.TECHNICIANS) === null) {
       localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify(initialTechnicians));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CASH_TRANSACTIONS)) {
+    if (localStorage.getItem(STORAGE_KEYS.CASH_TRANSACTIONS) === null) {
       localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(initialCashTransactions));
     }
+  }
+
+  /**
+   * Resets all tables to the original baseline factory demo data
+   * (3 customers, 4 vehicles, 6 stock items, 2 records, 2 reminders, etc.)
+   */
+  resetToFactoryDefaults(): void {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(initialCustomers));
+    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(initialVehicles));
+    localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(initialRecords));
+    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(initialReminders));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
+    localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(initialStockItems));
+    localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(initialPackages));
+    localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify(initialTechnicians));
+    localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(initialCashTransactions));
+    this.notifyListeners();
+  }
+
+  /**
+   * Clears all business data to completely empty state (0 records)
+   */
+  clearAllData(): void {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify([]));
+    this.notifyListeners();
   }
 
   constructor() {

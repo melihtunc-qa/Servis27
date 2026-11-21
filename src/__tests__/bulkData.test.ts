@@ -51,6 +51,7 @@ describe('100 Bulk Test Data & High-Volume Behavior Tests', () => {
     });
 
     it('should quickly perform contain and substring search across 100 vehicles', () => {
+      storage.seed100TestData();
       const t0 = performance.now();
       const vrMatches = storage.searchVehiclesByPlate('VR');
       const duration = performance.now() - t0;
@@ -88,6 +89,7 @@ describe('100 Bulk Test Data & High-Volume Behavior Tests', () => {
     });
 
     it('should properly identify critical low-stock items in the 100 items inventory', () => {
+      storage.seed100TestData();
       const lowStock = storage.getLowStockItems();
       assert.ok(lowStock.length >= 10, 'Should have at least 10 critical low stock items');
       lowStock.forEach(item => {
@@ -118,6 +120,57 @@ describe('100 Bulk Test Data & High-Volume Behavior Tests', () => {
       assert.strictEqual(storage.getCustomers().length, 100);
       assert.strictEqual(storage.getVehicles().length, 100);
       assert.strictEqual(storage.getStockItems().length, 100);
+
+      unsubscribe();
+    });
+  });
+
+  describe('Factory Reset & Clean Database Reset Verification', () => {
+    it('should reset from 100 test items back to initial factory demo baseline (3 customers, 4 vehicles, 6 stock items)', () => {
+      // 1. Seed 100 items
+      storage.seed100TestData();
+      assert.strictEqual(storage.getCustomers().length, 100);
+      assert.strictEqual(storage.getVehicles().length, 100);
+      assert.strictEqual(storage.getStockItems().length, 100);
+
+      let resetNotified = false;
+      const unsubscribe = storage.subscribe(() => {
+        resetNotified = true;
+      });
+
+      // 2. Perform factory reset
+      storage.resetToFactoryDefaults();
+
+      assert.strictEqual(resetNotified, true, 'resetToFactoryDefaults must notify listeners');
+      assert.strictEqual(storage.getCustomers().length, 3, 'Customers should reset to 3 baseline items');
+      assert.strictEqual(storage.getVehicles().length, 4, 'Vehicles should reset to 4 baseline items');
+      assert.strictEqual(storage.getStockItems().length, 6, 'Stock items should reset to 6 baseline items');
+      assert.strictEqual(storage.getServiceRecords().length, 2, 'Service records should reset to 2 baseline items');
+      assert.strictEqual(storage.getReminders().length, 2, 'Reminders should reset to 2 baseline items');
+
+      unsubscribe();
+    });
+
+    it('should clear all data completely to 0 records when clearAllData() is invoked', () => {
+      // 1. Seed 100 items
+      storage.seed100TestData();
+      assert.ok(storage.getCustomers().length > 0);
+
+      let clearNotified = false;
+      const unsubscribe = storage.subscribe(() => {
+        clearNotified = true;
+      });
+
+      // 2. Clear all data
+      storage.clearAllData();
+
+      assert.strictEqual(clearNotified, true, 'clearAllData must notify listeners');
+      assert.strictEqual(storage.getCustomers().length, 0, 'Customers must be empty (0)');
+      assert.strictEqual(storage.getVehicles().length, 0, 'Vehicles must be empty (0)');
+      assert.strictEqual(storage.getStockItems().length, 0, 'Stock items must be empty (0)');
+      assert.strictEqual(storage.getServiceRecords().length, 0, 'Service records must be empty (0)');
+      assert.strictEqual(storage.getReminders().length, 0, 'Reminders must be empty (0)');
+      assert.strictEqual(storage.getCashTransactions().length, 0, 'Cash transactions must be empty (0)');
 
       unsubscribe();
     });
