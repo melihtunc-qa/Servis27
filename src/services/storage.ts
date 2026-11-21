@@ -558,6 +558,18 @@ class StorageService {
     }
   }
 
+  restoreStock(stockId: string, quantityToRestore: number) {
+    if (quantityToRestore <= 0) return;
+    const list = this.getStockItems();
+    const item = list.find(s => s.id === stockId);
+    if (item) {
+      item.quantity += quantityToRestore;
+      item.updatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(list));
+      this.notifyListeners();
+    }
+  }
+
   // --- Cash & Register Transactions ---
   getCashTransactions(): CashTransaction[] {
     const data = localStorage.getItem(STORAGE_KEYS.CASH_TRANSACTIONS);
@@ -673,8 +685,11 @@ class StorageService {
 
   saveServiceRecord(record: ServiceRecord): ServiceRecord {
     const list = this.getServiceRecords();
-    const isNew = !list.some(r => r.id === record.id);
     const index = list.findIndex(r => r.id === record.id);
+    const isNew = index === -1;
+    const oldRecord: ServiceRecord | null = index >= 0 
+      ? { ...list[index], items: list[index].items ? list[index].items.map(it => ({ ...it })) : [] } 
+      : null;
     
     if (index >= 0) {
       list[index] = record;
@@ -690,48 +705,166 @@ class StorageService {
       this.saveVehicle(vehicle);
     }
 
-    // Auto calculate customer balance
+    // Auto calculate customer balance for current customer
     const customer = this.getCustomer(record.customerId);
     if (customer) {
       const customerRecords = list.filter(r => r.customerId === customer.id);
       const totalDebt = customerRecords.reduce((sum, r) => {
         return sum + Math.max(0, r.grandTotal - (r.paidAmount || 0));
       }, 0);
-      customer.balance = totalDebt;
+      customer.balance = Math.max(0, Math.round(totalDebt * 100) / 100);
       this.saveCustomer(customer);
     }
 
-    // Deduct stock for parts selected from inventory
-    if (isNew && record.items) {
-      record.items.forEach(it => {
+    // If customer was changed on update, recalculate previous customer's balance too
+    if (oldRecord && oldRecord.customerId !== record.customerId) {
+      const prevCustomer = this.getCustomer(oldRecord.customerId);
+      if (prevCustomer) {
+        const prevRecords = list.filter(r => r.customerId === prevCustomer.id);
+        const prevDebt = prevRecords.reduce((sum, r) => {
+          return sum + Math.max(0, r.grandTotal - (r.paidAmount || 0));
+        }, 0);
+        prevCustomer.balance = Math.max(0, Math.round(prevDebt * 100) / 100);
+        this.saveCustomer(prevCustomer);
+      }
+    }
+
+    // Stock inventory reconciliation (Delta updates)
+    if (isNew) {
+      if (record.items) {
+        record.items.forEach(it => {
+          if (it.stockItemId) {
+            this.deductStock(it.stockItemId, Number(it.quantity) || 1);
+          }
+        });
+      }
+    } else if (oldRecord) {
+      // Compare old and new stock item usage
+      const oldUsage = new Map<string, number>();
+      oldRecord.items?.forEach(it => {
         if (it.stockItemId) {
-          this.deductStock(it.stockItemId, it.quantity);
+          oldUsage.set(it.stockItemId, (oldUsage.get(it.stockItemId) || 0) + (Number(it.quantity) || 0));
+        }
+      });
+
+      const newUsage = new Map<string, number>();
+      record.items?.forEach(it => {
+        if (it.stockItemId) {
+          newUsage.set(it.stockItemId, (newUsage.get(it.stockItemId) || 0) + (Number(it.quantity) || 0));
+        }
+      });
+
+      const allStockIds = new Set([...oldUsage.keys(), ...newUsage.keys()]);
+      allStockIds.forEach(stockId => {
+        const oldQty = oldUsage.get(stockId) || 0;
+        const newQty = newUsage.get(stockId) || 0;
+        const delta = newQty - oldQty;
+        if (delta > 0) {
+          // More parts consumed: deduct delta from stock
+          this.deductStock(stockId, delta);
+        } else if (delta < 0) {
+          // Parts returned or reduced: restore to stock
+          this.restoreStock(stockId, Math.abs(delta));
         }
       });
     }
 
-    // If paid amount > 0, log into cashbook if new
-    if (isNew && record.paidAmount > 0) {
-      const plate = vehicle?.plate || '';
-      const custName = customer?.fullName || '';
-      this.saveCashTransaction({
-        id: `csh-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        date: new Date().toISOString(),
-        type: 'GELIR',
-        category: 'SERVIS_TAHSILAT',
-        amount: record.paidAmount,
-        paymentMethod: record.paymentMethod === 'KREDI_KARTI' ? 'KREDI_KARTI' : record.paymentMethod === 'HAVALE' ? 'HAVALE' : 'NAKIT',
-        description: `${plate} Servis Tahsilatı - ${custName}`,
-        relatedServiceId: record.id,
-        relatedCustomerId: record.customerId,
-      });
+    // Cash transactions synchronization
+    const currentPaid = Math.max(0, Number(record.paidAmount) || 0);
+    const plate = vehicle?.plate || '';
+    const custName = customer?.fullName || '';
+    const cashList = this.getCashTransactions();
+    const existingTx = cashList.find(t => t.relatedServiceId === record.id);
+
+    if (isNew) {
+      if (currentPaid > 0) {
+        this.saveCashTransaction({
+          id: `csh-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          date: new Date().toISOString(),
+          type: 'GELIR',
+          category: 'SERVIS_TAHSILAT',
+          amount: currentPaid,
+          paymentMethod: record.paymentMethod === 'KREDI_KARTI' ? 'KREDI_KARTI' : record.paymentMethod === 'HAVALE' ? 'HAVALE' : 'NAKIT',
+          description: `${plate} Servis Tahsilatı - ${custName}`,
+          relatedServiceId: record.id,
+          relatedCustomerId: record.customerId,
+        });
+      }
+    } else {
+      if (existingTx) {
+        if (currentPaid > 0) {
+          existingTx.amount = currentPaid;
+          existingTx.paymentMethod = record.paymentMethod === 'KREDI_KARTI' ? 'KREDI_KARTI' : record.paymentMethod === 'HAVALE' ? 'HAVALE' : 'NAKIT';
+          existingTx.description = `${plate} Servis Tahsilatı - ${custName}`;
+          existingTx.relatedCustomerId = record.customerId;
+          this.saveCashTransaction(existingTx);
+        } else {
+          // Payment reduced to 0: remove the cash inflow
+          this.deleteCashTransaction(existingTx.id);
+        }
+      } else if (currentPaid > 0) {
+        // Previously paidAmount was 0, now new payment received
+        this.saveCashTransaction({
+          id: `csh-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          date: new Date().toISOString(),
+          type: 'GELIR',
+          category: 'SERVIS_TAHSILAT',
+          amount: currentPaid,
+          paymentMethod: record.paymentMethod === 'KREDI_KARTI' ? 'KREDI_KARTI' : record.paymentMethod === 'HAVALE' ? 'HAVALE' : 'NAKIT',
+          description: `${plate} Servis Tahsilatı - ${custName}`,
+          relatedServiceId: record.id,
+          relatedCustomerId: record.customerId,
+        });
+      }
     }
 
-    // Generate automatic maintenance reminder
-    this.createAutomaticReminderForRecord(record);
+    // Generate automatic maintenance reminder only if it is a brand new service record
+    if (isNew) {
+      this.createAutomaticReminderForRecord(record);
+    }
 
     this.notifyListeners();
     return record;
+  }
+
+  deleteServiceRecord(id: string): boolean {
+    const list = this.getServiceRecords();
+    const record = list.find(r => r.id === id);
+    if (!record) return false;
+
+    // 1. Restore any stock items that were consumed by this record
+    if (record.items) {
+      record.items.forEach(it => {
+        if (it.stockItemId && it.quantity > 0) {
+          this.restoreStock(it.stockItemId, it.quantity);
+        }
+      });
+    }
+
+    // 2. Delete any related cash transactions
+    const cashList = this.getCashTransactions();
+    const relatedTx = cashList.find(t => t.relatedServiceId === id);
+    if (relatedTx) {
+      this.deleteCashTransaction(relatedTx.id);
+    }
+
+    // 3. Remove record from list
+    const updatedList = list.filter(r => r.id !== id);
+    localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(updatedList));
+
+    // 4. Recalculate customer balance
+    const customer = this.getCustomer(record.customerId);
+    if (customer) {
+      const remainingRecords = updatedList.filter(r => r.customerId === customer.id);
+      const totalDebt = remainingRecords.reduce((sum, r) => {
+        return sum + Math.max(0, r.grandTotal - (r.paidAmount || 0));
+      }, 0);
+      customer.balance = Math.max(0, Math.round(totalDebt * 100) / 100);
+      this.saveCustomer(customer);
+    }
+
+    this.notifyListeners();
+    return true;
   }
 
   private createAutomaticReminderForRecord(record: ServiceRecord) {

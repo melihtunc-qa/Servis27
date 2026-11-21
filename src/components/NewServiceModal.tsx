@@ -22,6 +22,7 @@ interface NewServiceModalProps {
   onClose: () => void;
   onRecordCreated: (record: ServiceRecord) => void;
   preSelectedVehicle?: Vehicle | null;
+  recordToEdit?: ServiceRecord | null;
 }
 
 export const NewServiceModal: React.FC<NewServiceModalProps> = ({
@@ -29,6 +30,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   onClose,
   onRecordCreated,
   preSelectedVehicle,
+  recordToEdit,
 }) => {
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();
@@ -41,7 +43,11 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   const [selectedVehicleId, setSelectedVehicleId] = useState(
-    preSelectedVehicle ? preSelectedVehicle.id : (vehicles[0]?.id || '')
+    recordToEdit 
+      ? recordToEdit.vehicleId 
+      : preSelectedVehicle 
+      ? preSelectedVehicle.id 
+      : (vehicles[0]?.id || '')
   );
 
   const [isVehicleDropdownOpen, setIsVehicleDropdownOpen] = useState(false);
@@ -87,21 +93,42 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setItems([]);
-      setDiscount(0);
-      setPaidAmount(0);
-      setComplaint('');
-      setDiagnosis('');
-      setStatus('KABUL_EDILDI');
-      if (preSelectedVehicle) {
-        setSelectedVehicleId(preSelectedVehicle.id);
-        setEntryKm(preSelectedVehicle.currentKm);
-      } else if (vehicles[0]) {
-        setSelectedVehicleId(vehicles[0].id);
-        setEntryKm(vehicles[0].currentKm);
+      if (recordToEdit) {
+        setSelectedVehicleId(recordToEdit.vehicleId);
+        setEntryKm(recordToEdit.entryKm);
+        setComplaint(recordToEdit.complaint);
+        setDiagnosis(recordToEdit.diagnosis || '');
+        setStatus(recordToEdit.status);
+        setDiscount(recordToEdit.discount || 0);
+        setPaidAmount(recordToEdit.paidAmount || 0);
+        setPaymentStatus(recordToEdit.paymentStatus);
+        setPaymentMethod(recordToEdit.paymentMethod || 'NAKIT');
+        setItems(recordToEdit.items ? recordToEdit.items.map(it => ({
+          id: it.id,
+          itemType: it.itemType,
+          name: it.name,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          costPrice: it.costPrice || 0,
+          stockItemId: it.stockItemId,
+        })) : []);
+      } else {
+        setItems([]);
+        setDiscount(0);
+        setPaidAmount(0);
+        setComplaint('');
+        setDiagnosis('');
+        setStatus('KABUL_EDILDI');
+        if (preSelectedVehicle) {
+          setSelectedVehicleId(preSelectedVehicle.id);
+          setEntryKm(preSelectedVehicle.currentKm);
+        } else if (vehicles[0]) {
+          setSelectedVehicleId(vehicles[0].id);
+          setEntryKm(vehicles[0].currentKm);
+        }
       }
     }
-  }, [isOpen, preSelectedVehicle]);
+  }, [isOpen, preSelectedVehicle, recordToEdit]);
 
   const filteredVehicles = vehicles.filter(v => {
     if (!vehicleSearchQuery.trim()) return true;
@@ -226,7 +253,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
       return;
     }
 
-    const recordId = `srv-${Date.now()}`;
+    const recordId = recordToEdit ? recordToEdit.id : `srv-${Date.now()}`;
 
     const formattedItems: ServiceItem[] = items.map((it) => ({
       id: it.id,
@@ -240,11 +267,12 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
       stockItemId: it.stockItemId,
     }));
 
-    const newRecord: ServiceRecord = {
+    const finalRecord: ServiceRecord = {
       id: recordId,
       vehicleId: selectedVehicle.id,
       customerId: selectedCustomer.id,
-      entryDate: new Date().toISOString(),
+      technicianId: recordToEdit?.technicianId,
+      entryDate: recordToEdit ? recordToEdit.entryDate : new Date().toISOString(),
       entryKm: Number(entryKm) || selectedVehicle.currentKm,
       complaint,
       diagnosis,
@@ -257,11 +285,13 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
       paidAmount: Number(paidAmount) || 0,
       paymentStatus,
       paymentMethod,
-      createdAt: new Date().toISOString(),
+      intakeChecklist: recordToEdit?.intakeChecklist,
+      technicianNotes: recordToEdit?.technicianNotes,
+      createdAt: recordToEdit ? recordToEdit.createdAt : new Date().toISOString(),
     };
 
-    storage.saveServiceRecord(newRecord);
-    onRecordCreated(newRecord);
+    storage.saveServiceRecord(finalRecord);
+    onRecordCreated(finalRecord);
     onClose();
   };
 
@@ -277,8 +307,14 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
               <Wrench className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">Yeni İş Emri & Servis Girişi</h3>
-              <p className="text-xs text-slate-400">Araç kabul, işlem kalemleri ve fiyatlandırma</p>
+              <h3 className="font-bold text-lg text-white">
+                {recordToEdit ? 'İş Emrini Düzenle / Güncelle' : 'Yeni İş Emri & Servis Girişi'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {recordToEdit 
+                  ? 'İş emri detayları, parçalar ve ödeme durumunu güncelleyin' 
+                  : 'Araç kabul, işlem kalemleri ve fiyatlandırma'}
+              </p>
             </div>
           </div>
           <button
@@ -789,7 +825,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition shadow-md shadow-blue-600/30 flex items-center gap-2"
             >
               <CheckCircle className="w-4 h-4" />
-              İş Emrini Kaydet ve Başlat
+              {recordToEdit ? 'Güncellemeleri Kaydet' : 'İş Emrini Kaydet ve Başlat'}
             </button>
           </div>
         </form>
