@@ -102,8 +102,6 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
     }
   }, [isOpen, preSelectedVehicle]);
 
-  if (!isOpen) return null;
-
   const filteredVehicles = vehicles.filter(v => {
     if (!vehicleSearchQuery.trim()) return true;
     const q = vehicleSearchQuery.trim().toLowerCase();
@@ -211,10 +209,10 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
 
   // Auto-sync paidAmount when paymentStatus is 'ODENDI'
   useEffect(() => {
-    if (paymentStatus === 'ODENDI') {
+    if (isOpen && paymentStatus === 'ODENDI') {
       setPaidAmount(grandTotal);
     }
-  }, [grandTotal, paymentStatus]);
+  }, [isOpen, grandTotal, paymentStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,6 +263,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
     onRecordCreated(newRecord);
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
