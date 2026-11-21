@@ -209,6 +209,13 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
 
   const grandTotal = Math.max(0, partsTotal + laborTotal - Number(discount || 0));
 
+  // Auto-sync paidAmount when paymentStatus is 'ODENDI'
+  useEffect(() => {
+    if (paymentStatus === 'ODENDI') {
+      setPaidAmount(grandTotal);
+    }
+  }, [grandTotal, paymentStatus]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicle || !selectedCustomer) {
@@ -505,7 +512,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                           <Package className="w-6 h-6 text-slate-600 mb-1" />
                           <p className="font-medium text-slate-400">Henüz parça veya işçilik eklenmedi.</p>
                           <p className="text-[11px] text-slate-500">
-                            Yukarıdaki <strong className="text-emerald-400 font-normal">+ Stoktan Parça Ekle</strong>, <strong className="text-cyan-400 font-normal">+ Manuel Parça</strong> veya <strong className="text-amber-400 font-normal">+ İşçilik Ekle</strong> butonlarını kullanarak ekleyebilirsiniz.
+                            Yukarıdaki <strong className="text-emerald-400 font-normal">+ Stoktan Parça Ekle</strong>, <strong className="text-cyan-400 font-normal">+ Stok Dışı Parça</strong> veya <strong className="text-amber-400 font-normal">+ İşçilik Ekle</strong> butonlarını kullanarak ekleyebilirsiniz.
                           </p>
                         </div>
                       </td>
@@ -658,8 +665,18 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                     onChange={(e) => {
                       const val = e.target.value as PaymentStatus;
                       setPaymentStatus(val);
-                      if (val === 'ODENDI') setPaidAmount(grandTotal);
-                      if (val === 'BEKLIYOR' || val === 'VERESIYE') setPaidAmount(0);
+                      if (val === 'ODENDI') {
+                        setPaidAmount(grandTotal);
+                        if (paymentMethod === 'ACIK_HESAP') setPaymentMethod('NAKIT');
+                      } else if (val === 'BEKLIYOR' || val === 'VERESIYE') {
+                        setPaidAmount(0);
+                        if (val === 'VERESIYE') setPaymentMethod('ACIK_HESAP');
+                      } else if (val === 'KISMI_ODENDI') {
+                        if (paidAmount === 0 || paidAmount >= grandTotal) {
+                          setPaidAmount(Math.round(grandTotal / 2));
+                        }
+                        if (paymentMethod === 'ACIK_HESAP') setPaymentMethod('NAKIT');
+                      }
                     }}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
                   >
@@ -676,7 +693,17 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                   </label>
                   <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setPaymentMethod(val);
+                      if (val === 'ACIK_HESAP') {
+                        setPaymentStatus('VERESIYE');
+                        setPaidAmount(0);
+                      } else if (paymentStatus === 'VERESIYE') {
+                        setPaymentStatus('ODENDI');
+                        setPaidAmount(grandTotal);
+                      }
+                    }}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
                   >
                     <option value="NAKIT">Nakit</option>
@@ -721,9 +748,28 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                   min="0"
                   max={grandTotal}
                   value={paidAmount}
-                  onChange={(e) => setPaidAmount(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Math.max(0, Number(e.target.value));
+                    setPaidAmount(val);
+                    if (val >= grandTotal && grandTotal > 0) {
+                      setPaymentStatus('ODENDI');
+                      if (paymentMethod === 'ACIK_HESAP') setPaymentMethod('NAKIT');
+                    } else if (val <= 0) {
+                      setPaymentStatus('VERESIYE');
+                    } else {
+                      setPaymentStatus('KISMI_ODENDI');
+                      if (paymentMethod === 'ACIK_HESAP') setPaymentMethod('NAKIT');
+                    }
+                  }}
                   className="w-28 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-right text-emerald-400 font-mono font-bold focus:outline-none"
                 />
+              </div>
+              <div className="flex items-center justify-between py-1.5 pt-2 border-t border-slate-800/80">
+                <span className="text-slate-400">Kalan Borç (Cari):</span>
+                <span className={`font-mono font-bold text-xs ${grandTotal - paidAmount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  ₺{Math.max(0, grandTotal - paidAmount).toLocaleString('tr-TR')}
+                  {grandTotal - paidAmount > 0 ? ' (Müşteri Bakiyesine Borç Yazılır)' : ' (Borç Yok)'}
+                </span>
               </div>
             </div>
           </div>
