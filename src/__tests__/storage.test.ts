@@ -359,6 +359,33 @@ describe('Storage & Repository Integration Tests', () => {
       assert.strictEqual(stats.acceptedServiceCount, 1, 'acceptedServiceCount must count KABUL_EDILDI records');
       assert.strictEqual(stats.waitingPartsCount, 1, 'waitingPartsCount must count PARCA_BEKLENIYOR records');
     });
+
+    it('should return up to 20 recent records in getDashboardStats().recentRecords', () => {
+      const customer = storage.getCustomers()[0];
+      const vehicle = storage.getVehicles()[0];
+      for (let i = 0; i < 25; i++) {
+        storage.saveServiceRecord({
+          id: `recent-limit-test-srv-${i}`,
+          vehicleId: vehicle.id,
+          customerId: customer.id,
+          entryDate: new Date().toISOString(),
+          entryKm: 10000 + i,
+          status: 'TAMAMLANDI',
+          complaint: `Periyodik test ${i}`,
+          paymentStatus: 'ODENDI',
+          items: [],
+          partsTotal: 0,
+          laborTotal: 0,
+          discount: 0,
+          grandTotal: 100,
+          paidAmount: 100,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      const stats = storage.getDashboardStats();
+      assert.strictEqual(stats.recentRecords.length, 20, 'recentRecords must return up to 20 records');
+    });
   });
 
   describe('Backup & Restore (Export / Import)', () => {

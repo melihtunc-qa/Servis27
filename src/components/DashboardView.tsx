@@ -183,9 +183,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold">
+              <thead className="bg-slate-950/90 backdrop-blur text-slate-400 text-xs uppercase font-semibold sticky top-0 z-10">
                 <tr>
                   <th className="py-3 px-3 rounded-l-lg">Plaka / Araç</th>
                   <th className="py-3 px-3">Müşteri</th>

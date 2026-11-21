@@ -930,7 +930,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                                         className="text-slate-500 hover:text-rose-400 text-[10px] underline ml-1"
                                         title="Depo stok bağlantısını kopar"
                                       >
-                                        (Bağı Kopar)
+                                        (Stok Dışı Ekle)
                                       </button>
                                     </div>
                                   )}

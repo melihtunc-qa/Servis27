@@ -1047,7 +1047,7 @@ class StorageService {
       totalIncome,
       totalExpense,
       netCashBalance,
-      recentRecords: records.slice(0, 5),
+      recentRecords: records.slice(0, 20),
     };
   }
 }
