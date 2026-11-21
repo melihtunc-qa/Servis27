@@ -8,17 +8,23 @@ import {
   AlertTriangle, 
   Car, 
   User, 
-  X,
-  Trash2
+  X, 
+  Trash2,
+  Search,
+  Calendar
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Reminder, ReminderType, ReminderStatus, Vehicle, Customer } from '../types';
+
+export type ReminderFilterTab = 'ALL' | 'YAKLASAN' | 'GECMIS' | 'TAMAMLANDI';
 
 export const RemindersView: React.FC = () => {
   const [reminders, setReminders] = useState<Reminder[]>(() => storage.getReminders());
   const [vehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [customers] = useState<Customer[]>(() => storage.getCustomers());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ReminderFilterTab>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -42,6 +48,36 @@ export const RemindersView: React.FC = () => {
 
   const getVehicle = (id: string) => vehicles.find(v => v.id === id);
   const getCustomer = (id: string) => customers.find(c => c.id === id);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const getReminderCategory = (rem: Reminder): 'YAKLASAN' | 'GECMIS' | 'TAMAMLANDI' => {
+    if (rem.status === 'TAMAMLANDI') return 'TAMAMLANDI';
+    if (rem.targetDate && rem.targetDate < todayStr) return 'GECMIS';
+    return 'YAKLASAN';
+  };
+
+  const allCount = reminders.length;
+  const yaklasanCount = reminders.filter(r => getReminderCategory(r) === 'YAKLASAN').length;
+  const gecmisCount = reminders.filter(r => getReminderCategory(r) === 'GECMIS').length;
+  const tamamlandiCount = reminders.filter(r => getReminderCategory(r) === 'TAMAMLANDI').length;
+
+  const filteredReminders = reminders.filter(rem => {
+    const category = getReminderCategory(rem);
+    const matchesTab = activeTab === 'ALL' || category === activeTab;
+    if (!matchesTab) return false;
+
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.trim().toLowerCase();
+    const vehicle = getVehicle(rem.vehicleId);
+    const customer = getCustomer(rem.customerId);
+    const plate = vehicle?.plate.toLowerCase() || '';
+    const custName = customer?.fullName.toLowerCase() || '';
+    const custPhone = customer?.phone || '';
+    const title = rem.title.toLowerCase();
+
+    return plate.includes(q) || custName.includes(q) || custPhone.includes(q) || title.includes(q);
+  });
 
   const handleSendWhatsApp = (rem: Reminder) => {
     const customer = getCustomer(rem.customerId);
@@ -118,18 +154,63 @@ export const RemindersView: React.FC = () => {
         </button>
       </div>
 
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'ALL', label: 'Tüm Kayıtlar', count: allCount, color: 'bg-blue-600 text-white' },
+            { id: 'YAKLASAN', label: 'Yaklaşan', count: yaklasanCount, color: 'bg-amber-600 text-white' },
+            { id: 'GECMIS', label: 'Geçmiş', count: gecmisCount, color: 'bg-rose-600 text-white' },
+            { id: 'TAMAMLANDI', label: 'Tamamlandı', count: tamamlandiCount, color: 'bg-emerald-600 text-white' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as ReminderFilterTab)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+                  isActive
+                    ? `${tab.color} font-semibold shadow-sm`
+                    : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  isActive ? 'bg-black/25 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="relative sm:w-64">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Plaka, müşteri veya başlık ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+      </div>
+
       {/* Reminders List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reminders.length === 0 ? (
+        {filteredReminders.length === 0 ? (
           <div className="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
             <Bell className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-400" />
-            <p className="text-base font-medium">Aktif hatırlatma bulunmuyor.</p>
+            <p className="text-base font-medium">Bu filtreye uygun hatırlatma bulunmuyor.</p>
           </div>
         ) : (
-          reminders.map((rem) => {
+          filteredReminders.map((rem) => {
             const vehicle = getVehicle(rem.vehicleId);
             const customer = getCustomer(rem.customerId);
-            const isCompleted = rem.status === 'TAMAMLANDI';
+            const category = getReminderCategory(rem);
+            const isCompleted = category === 'TAMAMLANDI';
+            const isOverdue = category === 'GECMIS';
             const isSent = rem.status === 'BILDIRILDI';
 
             return (
@@ -138,8 +219,10 @@ export const RemindersView: React.FC = () => {
                 className={`bg-slate-900 border rounded-2xl p-5 space-y-4 transition flex flex-col justify-between ${
                   isCompleted 
                     ? 'border-slate-800/50 opacity-60' 
+                    : isOverdue
+                    ? 'border-rose-500/40 bg-rose-950/15 hover:border-rose-500/60 shadow-sm shadow-rose-950/30'
                     : isSent
-                    ? 'border-emerald-500/30 bg-emerald-950/10'
+                    ? 'border-blue-500/30 bg-blue-950/10'
                     : 'border-slate-800 hover:border-slate-700'
                 }`}
               >
@@ -149,12 +232,16 @@ export const RemindersView: React.FC = () => {
                     <span className="font-mono font-bold text-sm text-blue-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
                       {vehicle?.plate}
                     </span>
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                      isCompleted ? 'bg-slate-800 text-slate-400' :
-                      isSent ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                      isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                      isOverdue ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold' :
+                      isSent ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
                       'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     }`}>
-                      {rem.status}
+                      {isCompleted ? 'Tamamlandı' :
+                       isOverdue ? 'Geçmiş / Gecikmiş' :
+                       isSent ? 'Bildirildi (WhatsApp)' :
+                       'Yaklaşan'}
                     </span>
                   </div>
 
@@ -169,9 +256,13 @@ export const RemindersView: React.FC = () => {
 
                   {/* Target details */}
                   <div className="mt-3 p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/80 text-xs space-y-1">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-slate-500">Hedef Tarih:</span>
-                      <span className="font-medium text-slate-200">{rem.targetDate}</span>
+                      <span className={`font-medium ${isOverdue ? 'text-rose-400 font-bold flex items-center gap-1 font-mono' : 'text-slate-200'}`}>
+                        {isOverdue && <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
+                        {rem.targetDate}
+                        {isOverdue && <span className="text-[10px] text-rose-400 font-normal">(Tarihi Geçti)</span>}
+                      </span>
                     </div>
                     {rem.targetKm && (
                       <div className="flex justify-between">
