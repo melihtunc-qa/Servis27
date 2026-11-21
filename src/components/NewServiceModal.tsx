@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Wrench, 
@@ -9,10 +9,13 @@ import {
   User, 
   CheckCircle,
   Package,
-  Search
+  Search,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Vehicle, Customer, ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, ItemType, StockItem } from '../types';
+import { matchPlateSearch } from '../utils/plate';
 
 interface NewServiceModalProps {
   isOpen: boolean;
@@ -40,6 +43,24 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   const [selectedVehicleId, setSelectedVehicleId] = useState(
     preSelectedVehicle ? preSelectedVehicle.id : (vehicles[0]?.id || '')
   );
+
+  const [isVehicleDropdownOpen, setIsVehicleDropdownOpen] = useState(false);
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
+  const vehicleDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (vehicleDropdownRef.current && !vehicleDropdownRef.current.contains(event.target as Node)) {
+        setIsVehicleDropdownOpen(false);
+      }
+    };
+    if (isVehicleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isVehicleDropdownOpen]);
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
   const selectedCustomer = selectedVehicle ? customers.find(c => c.id === selectedVehicle.customerId) : null;
@@ -83,6 +104,18 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   ]);
 
   if (!isOpen) return null;
+
+  const filteredVehicles = vehicles.filter(v => {
+    if (!vehicleSearchQuery.trim()) return true;
+    const q = vehicleSearchQuery.trim().toLowerCase();
+    const cust = customers.find(c => c.id === v.customerId);
+    return (
+      matchPlateSearch(v.plate, vehicleSearchQuery) ||
+      v.brand.toLowerCase().includes(q) ||
+      v.model.toLowerCase().includes(q) ||
+      (cust && cust.fullName.toLowerCase().includes(q))
+    );
+  });
 
   const filteredStockItems = stockItems.filter(item => {
     const q = stockSearchQuery.trim().toLowerCase();
@@ -252,43 +285,135 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Vehicle and Customer Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
-            <div className="md:col-span-1">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+            {/* Servise Gelen Araç (Searchable Select - Expanded Width) */}
+            <div className="md:col-span-6 relative" ref={vehicleDropdownRef}>
               <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
                 Servise Gelen Araç *
               </label>
-              <select
-                value={selectedVehicleId}
-                onChange={(e) => handleVehicleChange(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-blue-400 focus:outline-none focus:border-blue-500"
-                required
+
+              {/* Custom Searchable Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsVehicleDropdownOpen(prev => !prev)}
+                className="w-full bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl px-3 py-2 text-sm text-left font-medium text-slate-100 flex items-center justify-between transition focus:outline-none focus:border-blue-500 shadow-sm h-[38px]"
               >
-                {vehicles.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.plate} - {v.brand} {v.model}
-                  </option>
-                ))}
-              </select>
+                {selectedVehicle ? (
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 text-xs shrink-0">
+                      {selectedVehicle.plate}
+                    </span>
+                    <span className="truncate text-slate-200">
+                      {selectedVehicle.brand} {selectedVehicle.model} ({selectedVehicle.year})
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-slate-400">Araç Seçiniz...</span>
+                )}
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 ml-2 transition-transform duration-150 ${isVehicleDropdownOpen ? 'rotate-180 text-blue-400' : ''}`} />
+              </button>
+
+              {/* Searchable Dropdown Menu */}
+              {isVehicleDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2.5 space-y-2 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Plaka (örn: 34VR), marka, model veya müşteri..."
+                      value={vehicleSearchQuery}
+                      onChange={(e) => setVehicleSearchQuery(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-medium"
+                      autoFocus
+                    />
+                    {vehicleSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setVehicleSearchQuery('')}
+                        className="text-slate-500 hover:text-slate-300 absolute right-2.5 top-1/2 -translate-y-1/2"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+                    {filteredVehicles.length === 0 ? (
+                      <p className="p-3 text-center text-xs text-slate-500">
+                        Aramaya uygun araç bulunamadı.
+                      </p>
+                    ) : (
+                      filteredVehicles.map((v) => {
+                        const isSelected = v.id === selectedVehicleId;
+                        const vCustomer = customers.find(c => c.id === v.customerId);
+
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              handleVehicleChange(v.id);
+                              setIsVehicleDropdownOpen(false);
+                              setVehicleSearchQuery('');
+                            }}
+                            className={`w-full flex items-center justify-between p-2 rounded-lg text-xs text-left transition ${
+                              isSelected
+                                ? 'bg-blue-600/20 border border-blue-500/40 text-blue-200'
+                                : 'hover:bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <span className="font-mono font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 text-[11px] shrink-0">
+                                {v.plate}
+                              </span>
+                              <div className="truncate">
+                                <span className="font-semibold text-white mr-1.5">{v.brand} {v.model}</span>
+                                <span className="text-slate-400 text-[11px]">({v.year})</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              {vCustomer && (
+                                <span className="text-[11px] text-slate-400 truncate max-w-[130px]">
+                                  {vCustomer.fullName}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {v.currentKm.toLocaleString('tr-TR')} KM
+                              </span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="md:col-span-1">
+            {/* Müşteri (Sahibi) */}
+            <div className="md:col-span-4">
               <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
                 Müşteri (Sahibi)
               </label>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 truncate">
-                {selectedCustomer ? `${selectedCustomer.fullName} (${selectedCustomer.phone})` : 'Seçilmedi'}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 truncate flex items-center gap-2 h-[38px]">
+                <User className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="truncate">
+                  {selectedCustomer ? `${selectedCustomer.fullName} (${selectedCustomer.phone})` : 'Seçilmedi'}
+                </span>
               </div>
             </div>
 
-            <div className="md:col-span-1">
+            {/* Servis Giriş KM (Narrowed) */}
+            <div className="md:col-span-2">
               <label className="text-xs font-semibold text-slate-300 uppercase block mb-1">
-                Servis Giriş KM *
+                Giriş KM *
               </label>
               <input
                 type="number"
                 value={entryKm}
                 onChange={(e) => setEntryKm(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-slate-100 focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-slate-100 focus:outline-none focus:border-blue-500 h-[38px]"
                 required
               />
             </div>
