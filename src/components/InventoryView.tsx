@@ -14,6 +14,20 @@ import {
 import { storage } from '../services/storage';
 import { StockItem } from '../types';
 
+export const STOCK_CATEGORIES = [
+  'Motor Yağı',
+  'Filtre',
+  'Fren Sistemi',
+  'Ön Takım',
+  'Ateşleme',
+  'Sıvı & Katkı',
+  'Soğutma & Isıtma',
+  'Aydınlatma & Silecek',
+  'Kayış & Rulman',
+  'Sarf Malzeme',
+  'Diğer',
+] as const;
+
 export const InventoryView: React.FC = () => {
   const [stockItems, setStockItems] = useState<StockItem[]>(() => storage.getStockItems());
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,9 +58,9 @@ export const InventoryView: React.FC = () => {
     });
   }, []);
 
-  // Dynamic categories extracted from stock items
+  // Unified categories: standard inventory categories + any custom categories present in items
   const availableCategories = useMemo(() => {
-    const cats = new Set<string>();
+    const cats = new Set<string>(STOCK_CATEGORIES);
     stockItems.forEach(item => {
       if (item.category && item.category.trim()) {
         cats.add(item.category.trim());
@@ -232,9 +246,9 @@ export const InventoryView: React.FC = () => {
           )}
         </div>
 
-        {/* Categories Bar & Kritik Stoklar (Categories to the left of Kritik Stoklar) */}
+        {/* Categories Bar & Kritik Stoklar (Kritik Stoklar is immediately next to Tüm Kategoriler) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 lg:pb-0 scrollbar-thin scrollbar-thumb-slate-800 flex-1 min-w-0">
-          {/* Tüm Kategoriler Button */}
+          {/* 1. Tüm Kategoriler Button */}
           <button
             type="button"
             onClick={() => setSelectedCategory('ALL')}
@@ -244,7 +258,21 @@ export const InventoryView: React.FC = () => {
             <span>Tüm Kategoriler ({stockItems.length})</span>
           </button>
 
-          {/* Individual Category Buttons with subtle distinct color tones */}
+          {/* 2. Kritik Stoklar Button (Tüm Kategoriler'in hemen yanında) */}
+          <button
+            type="button"
+            onClick={() => setFilterLowStock(!filterLowStock)}
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ${
+              filterLowStock
+                ? 'bg-rose-500 text-white border-rose-400 shadow-sm shadow-rose-500/30'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40'
+            }`}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            <span>Kritik Stoklar ({lowStockCount})</span>
+          </button>
+
+          {/* 3. Individual Category Buttons with subtle distinct color tones */}
           {availableCategories.map((cat) => {
             const count = stockItems.filter(item => item.category === cat).length;
             const isSelected = selectedCategory === cat;
@@ -260,20 +288,6 @@ export const InventoryView: React.FC = () => {
               </button>
             );
           })}
-
-          {/* Kritik Stoklar Button (At the right side / end of categories) */}
-          <button
-            type="button"
-            onClick={() => setFilterLowStock(!filterLowStock)}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ml-auto lg:ml-0 ${
-              filterLowStock
-                ? 'bg-rose-500 text-white border-rose-400 shadow-sm shadow-rose-500/30'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40'
-            }`}
-          >
-            <AlertTriangle className="w-4 h-4" />
-            <span>Kritik Stoklar ({lowStockCount})</span>
-          </button>
         </div>
       </div>
 
@@ -451,14 +465,11 @@ export const InventoryView: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="Motor Yağı">Motor Yağı</option>
-                    <option value="Filtre">Filtre</option>
-                    <option value="Fren Sistemi">Fren Sistemi</option>
-                    <option value="Ön Takım">Ön Takım & Süspansiyon</option>
-                    <option value="Ateşleme">Ateşleme (Buji/Bobin)</option>
-                    <option value="Sıvı & Katkı">Sıvı & Antifriz</option>
-                    <option value="Kayış & Rulman">Kayış & Rulman</option>
-                    <option value="Diğer">Diğer</option>
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
