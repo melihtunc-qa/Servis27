@@ -190,21 +190,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
-
-      {/* Footer Info */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 text-xs text-slate-500 space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Lokal SQLite Veritabanı 
-          </span>
-          <span className="text-[11px] font-mono text-slate-400 font-semibold">v1.5.0</span>
-        </div>
-        <div className="flex items-center justify-between text-[11px] text-slate-600">
-          <span>Geliştirici:</span>
-          <span className="text-slate-400 font-medium">Melih Tunç</span>
-        </div>
-      </div>
     </aside>
   );
 };
