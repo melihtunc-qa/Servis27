@@ -68,7 +68,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   const [entryKm, setEntryKm] = useState(selectedVehicle ? selectedVehicle.currentKm : 0);
   const [complaint, setComplaint] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
-  const [status, setStatus] = useState<ServiceStatus>('ISLEMDE');
+  const [status, setStatus] = useState<ServiceStatus>('KABUL_EDILDI');
   const [discount, setDiscount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('ODENDI');
@@ -92,6 +92,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
       setPaidAmount(0);
       setComplaint('');
       setDiagnosis('');
+      setStatus('KABUL_EDILDI');
       if (preSelectedVehicle) {
         setSelectedVehicleId(preSelectedVehicle.id);
         setEntryKm(preSelectedVehicle.currentKm);
