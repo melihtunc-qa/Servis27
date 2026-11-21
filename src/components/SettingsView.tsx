@@ -498,13 +498,9 @@ export const SettingsView: React.FC = () => {
                 <span className="text-slate-400">Sürüm:</span>
                 <span className="font-mono font-bold text-emerald-400">v1.5.0</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/60">
+              <div className="flex justify-between py-1">
                 <span className="text-slate-400">Geliştirici:</span>
                 <span className="font-medium text-blue-400">Melih Tunç</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-400">Çalışma Tipi:</span>
-                <span className="text-slate-300">Taşınabilir (Portable / Çevrimdışı SQLite)</span>
               </div>
             </div>
           </div>
