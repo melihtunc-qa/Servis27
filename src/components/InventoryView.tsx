@@ -14,7 +14,7 @@ import {
 import { storage } from '../services/storage';
 import { StockItem } from '../types';
 
-export const STOCK_CATEGORIES = [
+const STOCK_CATEGORIES = [
   'Motor Yağı',
   'Filtre',
   'Fren Sistemi',
