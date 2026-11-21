@@ -92,9 +92,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="h-full flex flex-col p-6 space-y-4 max-w-7xl mx-auto w-full overflow-hidden">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Atölye Genel Durumu</h2>
           <p className="text-slate-400 text-sm">Gerçek zamanlı iş durumu, araçlar ve yaklaşan periyodik bakımlar</p>
@@ -108,7 +108,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Aktif İşler */}
         <div 
           onClick={() => onNavigate('services')}
@@ -191,10 +191,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Main Grid: Left = Recent Services, Right = Reminders */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
         {/* Recent Service Records (2 Cols) */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col overflow-hidden h-full">
+          <div className="shrink-0 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-400" />
               <h3 className="font-bold text-white text-base">Son İş Emirleri ve Servis Kayıtları</h3>
@@ -207,7 +207,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="overflow-y-auto overflow-x-hidden max-h-[640px]">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <table className="w-full text-left text-sm table-fixed">
               <thead className="bg-slate-950/95 backdrop-blur text-slate-400 text-xs uppercase font-semibold sticky top-0 z-10">
                 <tr>
@@ -281,8 +281,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Maintenance Reminders (1 Col) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col overflow-hidden h-full">
+          <div className="shrink-0 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-rose-400" />
               <h3 className="font-bold text-white text-base">Yaklaşan Bakımlar</h3>
@@ -295,7 +295,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="space-y-3 flex-1 overflow-y-auto max-h-[640px]">
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
             {reminders.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-500 text-xs py-8">
                 Şu an yaklaşan kritik bakım bulunmuyor.

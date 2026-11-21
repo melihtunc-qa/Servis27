@@ -108,7 +108,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-slate-950">
+      <main className={`flex-1 bg-slate-950 ${currentTab === 'dashboard' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
         {currentTab === 'dashboard' && (
           <DashboardView
             onNavigate={(tab) => setCurrentTab(tab)}
