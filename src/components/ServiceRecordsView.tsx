@@ -65,8 +65,10 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
 
   const handleUpdateStatus = (record: ServiceRecord, newStatus: ServiceStatus) => {
     const updated = { ...record, status: newStatus };
-    if (newStatus === 'TESLIM_EDILDI' && !updated.exitDate) {
-      updated.exitDate = new Date().toISOString();
+    if (newStatus === 'TESLIM_EDILDI') {
+      if (!updated.exitDate) updated.exitDate = new Date().toISOString();
+    } else {
+      delete updated.exitDate;
     }
     storage.saveServiceRecord(updated);
     refreshRecords();
@@ -383,12 +385,18 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                         </td>
                         <td className="py-3.5 px-4 min-w-[145px] whitespace-nowrap">
                           <span className={`px-3 py-1 text-[11px] font-semibold rounded-full whitespace-nowrap inline-block ${
+                            rec.status === 'KABUL_EDILDI' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
                             rec.status === 'ISLEMDE' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            rec.status === 'PARCA_BEKLENIYOR' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
                             rec.status === 'TAMAMLANDI' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                             rec.status === 'TESLIM_EDILDI' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
                             'bg-slate-700 text-slate-300'
                           }`}>
-                            {rec.status.replace('_', ' ')}
+                            {rec.status === 'KABUL_EDILDI' ? 'Kabul Edildi' :
+                             rec.status === 'ISLEMDE' ? 'İşlemde (Liftte)' :
+                             rec.status === 'PARCA_BEKLENIYOR' ? 'Parça Bekleniyor' :
+                             rec.status === 'TAMAMLANDI' ? 'Tamamlandı' :
+                             rec.status === 'TESLIM_EDILDI' ? 'Teslim Edildi' : rec.status}
                           </span>
                         </td>
                         <td className="py-3.5 px-4">
@@ -467,17 +475,23 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                     İş Emri Durumu
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {(['ISLEMDE', 'PARCA_BEKLENIYOR', 'TAMAMLANDI', 'TESLIM_EDILDI'] as ServiceStatus[]).map((st) => (
+                    {[
+                      { id: 'KABUL_EDILDI', label: 'Kabul Edildi' },
+                      { id: 'ISLEMDE', label: 'İşlemde (Liftte)' },
+                      { id: 'PARCA_BEKLENIYOR', label: 'Parça Bekliyor' },
+                      { id: 'TAMAMLANDI', label: 'Tamamlandı' },
+                      { id: 'TESLIM_EDILDI', label: 'Teslim Edildi' },
+                    ].map((st) => (
                       <button
-                        key={st}
-                        onClick={() => handleUpdateStatus(activeRecord, st)}
+                        key={st.id}
+                        onClick={() => handleUpdateStatus(activeRecord, st.id as ServiceStatus)}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
-                          activeRecord.status === st
-                            ? 'bg-blue-600 text-white font-bold'
-                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                          activeRecord.status === st.id
+                            ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/30'
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                         }`}
                       >
-                        {st.replace('_', ' ')}
+                        {st.label}
                       </button>
                     ))}
                   </div>
