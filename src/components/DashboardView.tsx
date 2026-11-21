@@ -25,7 +25,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectVehicle,
 }) => {
   const stats = storage.getDashboardStats();
-  const reminders = storage.getReminders().filter(r => r.status === 'YAKLASAN');
+  const reminders = storage
+    .getReminders()
+    .filter((r) => r.status === 'YAKLASAN')
+    .slice(0, 20);
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();
 
@@ -263,7 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="space-y-3 flex-1 overflow-y-auto">
+          <div className="space-y-3 flex-1 overflow-y-auto max-h-[640px]">
             {reminders.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-500 text-xs py-8">
                 Şu an yaklaşan kritik bakım bulunmuyor.

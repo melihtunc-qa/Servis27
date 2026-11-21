@@ -39,6 +39,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [customers, setCustomers] = useState<Customer[]>(() => storage.getCustomers());
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storage.getVehicles());
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterOnlyDebtors, setFilterOnlyDebtors] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [activeCustomerDetail, setActiveCustomerDetail] = useState<Customer | null>(selectedCustomerForDetail || null);
@@ -75,7 +76,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     return vehicles.filter(v => v.customerId === customerId);
   };
 
+  const debtorCustomers = customers.filter(c => (c.balance || 0) > 0);
+  const totalDebt = debtorCustomers.reduce((sum, c) => sum + (c.balance || 0), 0);
+
   const filteredCustomers = customers.filter(c => {
+    if (filterOnlyDebtors && !((c.balance || 0) > 0)) {
+      return false;
+    }
     const search = searchTerm.toLowerCase();
     return (
       c.fullName.toLowerCase().includes(search) ||
@@ -161,24 +168,91 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          placeholder="İsim, telefon veya e-posta ile müşteri ara..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
-        />
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="İsim, telefon veya e-posta ile müşteri ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded-lg transition"
+              title="Aramayı Temizle"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Borçlu Müşteriler Filtresi */}
+        <button
+          type="button"
+          onClick={() => setFilterOnlyDebtors((prev) => !prev)}
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition whitespace-nowrap border ${
+            filterOnlyDebtors
+              ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-sm shadow-rose-950/50'
+              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700'
+          }`}
+          title="Yalnızca cari hesap borcu (bakiye > 0) olan müşterileri listele"
+        >
+          <CreditCard className="w-4 h-4" />
+          <span>Borçlu Müşteriler</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              filterOnlyDebtors
+                ? 'bg-rose-500 text-white'
+                : 'bg-slate-800 text-slate-300'
+            }`}
+          >
+            {debtorCustomers.length}
+          </span>
+        </button>
       </div>
+
+      {/* Aktif Borçlu Filtresi Bilgi Şeridi */}
+      {filterOnlyDebtors && (
+        <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-2.5 text-xs text-rose-300">
+          <span className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-rose-400" />
+            <span>
+              Filtre aktif: <strong>{filteredCustomers.length} borçlu müşteri</strong> listeleniyor (Toplam Cari Alacak:{' '}
+              <strong className="text-white">₺{totalDebt.toLocaleString('tr-TR')}</strong>)
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilterOnlyDebtors(false)}
+            className="text-rose-400 hover:text-white underline font-semibold ml-2"
+          >
+            Filtreyi Temizle
+          </button>
+        </div>
+      )}
 
       {/* Customer Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCustomers.length === 0 ? (
           <div className="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-400" />
-            <p className="text-base font-medium">Müşteri bulunamadı.</p>
+            <p className="text-base font-medium">
+              {filterOnlyDebtors ? 'Borçlu müşteri bulunamadı.' : 'Müşteri bulunamadı.'}
+            </p>
+            {filterOnlyDebtors && (
+              <button
+                type="button"
+                onClick={() => setFilterOnlyDebtors(false)}
+                className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline font-medium"
+              >
+                Tüm Müşterileri Göster
+              </button>
+            )}
           </div>
         ) : (
           filteredCustomers.map((cust) => {

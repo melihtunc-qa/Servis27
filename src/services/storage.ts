@@ -1048,6 +1048,7 @@ class StorageService {
       totalExpense,
       netCashBalance,
       recentRecords: records.slice(0, 20),
+      recentReminders: reminders.filter(r => r.status === 'YAKLASAN').slice(0, 20),
     };
   }
 }

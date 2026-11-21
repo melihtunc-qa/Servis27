@@ -182,6 +182,30 @@ describe('Storage & Repository Integration Tests', () => {
       const customer = storage.getCustomer(cust.id);
       assert.equal(customer?.balance, 0, 'Customer debt must never be negative');
     });
+
+    it('should correctly isolate debtor customers where balance > 0', () => {
+      storage.saveCustomer({
+        id: 'cust-with-debt',
+        fullName: 'Borçlu Test Müşteri',
+        phone: '0555 111 22 33',
+        balance: 1500,
+        createdAt: new Date().toISOString(),
+      });
+      storage.saveCustomer({
+        id: 'cust-without-debt',
+        fullName: 'Temiz Test Müşteri',
+        phone: '0555 222 33 44',
+        balance: 0,
+        createdAt: new Date().toISOString(),
+      });
+
+      const customers = storage.getCustomers();
+      const debtors = customers.filter(c => (c.balance || 0) > 0);
+      const debtorIds = debtors.map(d => d.id);
+
+      assert.ok(debtorIds.includes('cust-with-debt'));
+      assert.ok(!debtorIds.includes('cust-without-debt'));
+    });
   });
 
   describe('Vehicle KM Tracking and Plate Normalization', () => {
@@ -385,6 +409,26 @@ describe('Storage & Repository Integration Tests', () => {
 
       const stats = storage.getDashboardStats();
       assert.strictEqual(stats.recentRecords.length, 20, 'recentRecords must return up to 20 records');
+    });
+
+    it('should return up to 20 recent upcoming reminders in getDashboardStats().recentReminders', () => {
+      const customer = storage.getCustomers()[0];
+      const vehicle = storage.getVehicles()[0];
+      for (let i = 0; i < 25; i++) {
+        storage.saveReminder({
+          id: `recent-reminder-test-${i}`,
+          vehicleId: vehicle.id,
+          customerId: customer.id,
+          type: 'YAG_BAKIMI',
+          title: `Bakım Hatırlatma ${i}`,
+          targetDate: '2026-12-31',
+          status: 'YAKLASAN',
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      const stats = storage.getDashboardStats();
+      assert.strictEqual(stats.recentReminders.length, 20, 'recentReminders must return up to 20 reminders');
     });
   });
 
