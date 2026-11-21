@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wrench, 
-  Users, 
   Car, 
   TrendingUp, 
   AlertCircle, 
@@ -12,9 +11,11 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { ServiceRecord, Customer, Vehicle, Reminder } from '../types';
+import { NavTab } from './Sidebar';
+import { useModal } from '../context/ModalContext';
 
 interface DashboardViewProps {
-  onNavigate: (tab: any) => void;
+  onNavigate: (tab: NavTab) => void;
   onOpenServiceDetail: (record: ServiceRecord) => void;
   onSelectVehicle: (vehicle: Vehicle) => void;
 }
@@ -24,10 +25,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenServiceDetail,
   onSelectVehicle,
 }) => {
+  const { alert } = useModal();
+  const [, setVersion] = useState(0);
+
+  useEffect(() => {
+    return storage.subscribe(() => {
+      setVersion((v) => v + 1);
+    });
+  }, []);
+
   const stats = storage.getDashboardStats();
   const reminders = storage
     .getReminders()
     .filter((r) => r.status === 'YAKLASAN')
+    .sort((a, b) => (a.targetDate || '').localeCompare(b.targetDate || ''))
     .slice(0, 20);
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();
@@ -47,6 +58,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const handleSendReminderWhatsApp = (reminder: Reminder) => {
     const phone = getCustomerPhone(reminder.customerId);
     const plate = getVehiclePlate(reminder.vehicleId);
+
+    if (!phone) {
+      alert({
+        title: 'Telefon Numarası Eksik',
+        message: 'Bu hatırlatma için kayıtlı müşteri telefon numarası bulunamadı.',
+        variant: 'warning',
+      });
+      return;
+    }
+
     const settings = storage.getSettings();
     const message = `Merhaba, ${settings.shopName} servisimizden yazıyoruz. ${plate} plakalı aracınızın ${reminder.title} zamanı yaklaşmıştır. Randevu ve detaylı bilgi için bize bu numaradan ulaşabilirsiniz.`;
     const url = storage.generateWhatsAppLink(phone, message);
@@ -291,7 +312,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                     <div>
                       <h4 className="text-sm font-semibold text-slate-200">{rem.title}</h4>
-                      <p className="text-xs text-slate-400">{customer?.fullName} ({customer?.phone})</p>
+                      <p className="text-xs text-slate-400">
+                        {customer ? `${customer.fullName} (${customer.phone || 'Telefon Yok'})` : 'Müşteri Kaydı Yok'}
+                      </p>
                     </div>
 
                     <div className="pt-1 flex justify-end">

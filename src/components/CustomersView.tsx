@@ -4,19 +4,13 @@ import {
   Search, 
   Plus, 
   Phone, 
-  Mail, 
-  MapPin, 
   Car, 
   MessageCircle, 
-  X,
-  CreditCard,
-  Edit2,
-  History,
-  ArrowRight,
-  Wrench,
-  Calendar,
-  ChevronRight,
-  ExternalLink
+  X, 
+  CreditCard, 
+  Edit2, 
+  History, 
+  ChevronRight 
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Customer, Vehicle, ServiceRecord } from '../types';
@@ -46,8 +40,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
   useEffect(() => {
     return storage.subscribe(() => {
-      setCustomers(storage.getCustomers());
+      const updatedCustomers = storage.getCustomers();
+      setCustomers(updatedCustomers);
       setVehicles(storage.getVehicles());
+      setActiveCustomerDetail(prev => prev ? updatedCustomers.find(c => c.id === prev.id) || null : null);
     });
   }, []);
 
@@ -72,6 +68,17 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     setCustomers(storage.getCustomers());
   };
 
+  const getStatusLabel = (status: ServiceRecord['status']) => {
+    switch (status) {
+      case 'KABUL_EDILDI': return 'Kabul Edildi';
+      case 'ISLEMDE': return 'İşlemde';
+      case 'PARCA_BEKLENIYOR': return 'Parça Bekleniyor';
+      case 'TAMAMLANDI': return 'Tamamlandı';
+      case 'TESLIM_EDILDI': return 'Teslim Edildi';
+      default: return status;
+    }
+  };
+
   const getCustomerVehicles = (customerId: string) => {
     return vehicles.filter(v => v.customerId === customerId);
   };
@@ -85,9 +92,9 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     }
     const search = searchTerm.toLowerCase();
     return (
-      c.fullName.toLowerCase().includes(search) ||
-      c.phone.includes(search) ||
-      (c.email && c.email.toLowerCase().includes(search))
+      (c.fullName || '').toLowerCase().includes(search) ||
+      (c.phone || '').includes(search) ||
+      (c.email ? c.email.toLowerCase().includes(search) : false)
     );
   });
 
@@ -145,6 +152,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   };
 
   const handleDirectWhatsApp = (phone: string, name: string) => {
+    if (!phone) {
+      alert({
+        title: 'Telefon Numarası Eksik',
+        message: 'Müşterinin kayıtlı bir telefon numarası bulunamadı.',
+        variant: 'warning',
+      });
+      return;
+    }
     const settings = storage.getSettings();
     const message = `Merhaba ${name} Bey/Hanım, ${settings.shopName} servisimizden ulaşıyoruz. Aracınız ile ilgili bilgi vermek istiyoruz.`;
     const url = storage.generateWhatsAppLink(phone, message);
@@ -651,7 +666,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {rec.complaint}
                             </p>
                             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800/60">
-                              <span>Durum: {rec.status}</span>
+                              <span>Durum: {getStatusLabel(rec.status)}</span>
                               <span className={rec.paymentStatus === 'ODENDI' ? 'text-emerald-400' : 'text-amber-400'}>
                                 {rec.paymentStatus === 'ODENDI' ? 'Ödendi' : `Kalan: ₺${Math.max(0, rec.grandTotal - (rec.paidAmount || 0)).toLocaleString('tr-TR')}`}
                               </span>
