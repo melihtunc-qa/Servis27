@@ -527,7 +527,16 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
                               {it.itemType}
                             </span>
                           </td>
-                          <td className="p-2.5 font-medium text-slate-200">{it.name}</td>
+                          <td className="p-2.5 font-medium text-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span>{it.name}</span>
+                              {it.stockItemId && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Yedek parça deposundan dinamik düşüldü">
+                                  📦 Depo
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-2.5 text-center font-mono">{it.quantity}</td>
                           <td className="p-2.5 text-right font-mono">₺{it.unitPrice.toLocaleString('tr-TR')}</td>
                           <td className="p-2.5 text-right font-mono font-bold text-slate-100">₺{it.totalPrice.toLocaleString('tr-TR')}</td>

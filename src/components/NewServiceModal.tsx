@@ -7,10 +7,12 @@ import {
   DollarSign, 
   Car, 
   User, 
-  CheckCircle 
+  CheckCircle,
+  Package,
+  Search
 } from 'lucide-react';
 import { storage } from '../services/storage';
-import { Vehicle, Customer, ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, ItemType } from '../types';
+import { Vehicle, Customer, ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, ItemType, StockItem } from '../types';
 
 interface NewServiceModalProps {
   isOpen: boolean;
@@ -27,6 +29,13 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
 }) => {
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();
+  const stockItems = storage.getStockItems();
+  const categories = Array.from(new Set(stockItems.map(s => s.category).filter(Boolean)));
+
+  const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
+  const [stockPickerRowIndex, setStockPickerRowIndex] = useState<number | null>(null);
+  const [stockSearchQuery, setStockSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   const [selectedVehicleId, setSelectedVehicleId] = useState(
     preSelectedVehicle ? preSelectedVehicle.id : (vehicles[0]?.id || '')
@@ -52,14 +61,16 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
     quantity: number;
     unitPrice: number;
     costPrice: number;
+    stockItemId?: string;
   }>>([
     {
       id: 'item-1',
       itemType: 'PARCA',
-      name: 'Motor Yağı ve Filtre Değişimi',
+      name: 'Castrol Edge 5W-30 LL Motor Yağı 4L',
       quantity: 1,
-      unitPrice: 2500,
-      costPrice: 1800,
+      unitPrice: 1850,
+      costPrice: 1350,
+      stockItemId: 'stk-1',
     },
     {
       id: 'item-2',
@@ -72,6 +83,56 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
   ]);
 
   if (!isOpen) return null;
+
+  const filteredStockItems = stockItems.filter(item => {
+    const q = stockSearchQuery.trim().toLowerCase();
+    const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
+    const matchesSearch = !q || 
+      item.name.toLowerCase().includes(q) ||
+      item.code.toLowerCase().includes(q) ||
+      item.brand.toLowerCase().includes(q) ||
+      (item.shelfLocation && item.shelfLocation.toLowerCase().includes(q));
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleSelectStockItem = (stockItem: StockItem) => {
+    if (stockPickerRowIndex !== null && items[stockPickerRowIndex]) {
+      const updated = [...items];
+      updated[stockPickerRowIndex] = {
+        ...updated[stockPickerRowIndex],
+        itemType: 'PARCA',
+        name: stockItem.name,
+        unitPrice: stockItem.unitPrice,
+        costPrice: stockItem.unitCost,
+        stockItemId: stockItem.id,
+        quantity: updated[stockPickerRowIndex].quantity || 1,
+      };
+      setItems(updated);
+      setStockPickerRowIndex(null);
+    } else {
+      setItems(prev => [
+        ...prev,
+        {
+          id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          itemType: 'PARCA',
+          name: stockItem.name,
+          quantity: 1,
+          unitPrice: stockItem.unitPrice,
+          costPrice: stockItem.unitCost,
+          stockItemId: stockItem.id,
+        },
+      ]);
+    }
+    setIsStockPickerOpen(false);
+  };
+
+  const handleUnlinkStock = (index: number) => {
+    const updated = [...items];
+    const item = { ...updated[index] };
+    delete item.stockItemId;
+    updated[index] = item;
+    setItems(updated);
+  };
 
   const handleVehicleChange = (vId: string) => {
     setSelectedVehicleId(vId);
@@ -138,6 +199,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
       unitPrice: Number(it.unitPrice) || 0,
       costPrice: Number(it.costPrice) || 0,
       totalPrice: (Number(it.quantity) || 1) * (Number(it.unitPrice) || 0),
+      stockItemId: it.stockItemId,
     }));
 
     const newRecord: ServiceRecord = {
@@ -270,11 +332,23 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => {
+                    setStockPickerRowIndex(null);
+                    setStockSearchQuery('');
+                    setIsStockPickerOpen(true);
+                  }}
+                  className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm active:scale-98"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  + Stoktan Parça Ekle
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleAddItem('PARCA')}
                   className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 border border-cyan-800 rounded-lg text-xs font-medium flex items-center gap-1 transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  + Parça Ekle
+                  + Manuel Parça
                 </button>
                 <button
                   type="button"
@@ -302,6 +376,9 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                 <tbody className="divide-y divide-slate-800/80">
                   {items.map((item, index) => {
                     const rowTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+                    const linkedStock = item.stockItemId ? stockItems.find(s => s.id === item.stockItemId) : null;
+                    const isOutOfStock = linkedStock && linkedStock.quantity < Number(item.quantity);
+
                     return (
                       <tr key={item.id} className="hover:bg-slate-900/50">
                         <td className="p-2">
@@ -312,14 +389,66 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
                           </span>
                         </td>
                         <td className="p-2">
-                          <input
-                            type="text"
-                            placeholder="Parça / İşlem adı"
-                            value={item.name}
-                            onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500"
-                            required
-                          />
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                placeholder={item.itemType === 'PARCA' ? 'Parça Adı (veya Stoktan Seçin)' : 'İşlem / İşçilik Adı'}
+                                value={item.name}
+                                onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500"
+                                required
+                              />
+                              {item.itemType === 'PARCA' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setStockPickerRowIndex(index);
+                                    setStockSearchQuery('');
+                                    setIsStockPickerOpen(true);
+                                  }}
+                                  title={item.stockItemId ? 'Farklı stok ürünü seç' : 'Depo stok listesinden seç'}
+                                  className={`shrink-0 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1 transition ${
+                                    item.stockItemId
+                                      ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800 hover:bg-emerald-900'
+                                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                                  }`}
+                                >
+                                  <Package className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>{item.stockItemId ? 'Stok' : 'Depo'}</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Stock Info Badge & Real-time Validation */}
+                            {item.itemType === 'PARCA' && item.stockItemId && linkedStock && (
+                              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span className="font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                                  <Package className="w-3 h-3" />
+                                  {linkedStock.code}
+                                </span>
+                                <span className="text-slate-400">
+                                  Mevcut Depo: <strong className={isOutOfStock ? 'text-rose-400' : 'text-slate-200 font-mono'}>{linkedStock.quantity} adet</strong>
+                                </span>
+                                {linkedStock.shelfLocation && (
+                                  <span className="text-slate-500">({linkedStock.shelfLocation})</span>
+                                )}
+                                {isOutOfStock && (
+                                  <span className="text-rose-400 font-semibold flex items-center gap-1">
+                                    ⚠️ Yetersiz Stok!
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnlinkStock(index)}
+                                  className="text-slate-500 hover:text-amber-400 underline text-[10px] ml-auto"
+                                  title="Stok bağlantısını kaldırıp serbest parçaya çevir"
+                                >
+                                  Bağlantıyı Kaldır
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="p-2">
                           <input
@@ -481,6 +610,153 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Stock Selection Modal (Stoktan Parça Seç) */}
+      {isStockPickerOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Yedek Parça Deposundan Seç</h3>
+                  <p className="text-[11px] text-slate-400">
+                    İş emrine eklenecek parçayı seçin; kayıt tamamlandığında stoktan otomatik düşülecektir.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStockPickerOpen(false);
+                  setStockPickerRowIndex(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="p-4 border-b border-slate-800 bg-slate-950/40 space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Parça adı, OEM parça kodu, marka veya raf ara..."
+                  value={stockSearchQuery}
+                  onChange={(e) => setStockSearchQuery(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium"
+                  autoFocus
+                />
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('ALL')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition shrink-0 ${
+                    selectedCategory === 'ALL'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Tümü ({stockItems.length})
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition shrink-0 ${
+                      selectedCategory === cat
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stock Items List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {filteredStockItems.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs">
+                  Aramanıza uygun yedek parça bulunamadı.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredStockItems.map((stk) => {
+                    const isCritical = stk.quantity <= stk.minQuantity;
+                    const isZero = stk.quantity <= 0;
+
+                    return (
+                      <div
+                        key={stk.id}
+                        className="bg-slate-950 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition flex items-center justify-between gap-3 group"
+                      >
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              {stk.code}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{stk.brand}</span>
+                            {stk.shelfLocation && (
+                              <span className="text-[10px] text-slate-500">({stk.shelfLocation})</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-semibold text-white truncate" title={stk.name}>
+                            {stk.name}
+                          </p>
+                          <div className="flex items-center gap-3 text-[11px]">
+                            <span className="text-slate-400">
+                              Depo: <strong className={isZero ? 'text-rose-400' : isCritical ? 'text-amber-400' : 'text-emerald-400 font-mono'}>{stk.quantity} adet</strong>
+                            </span>
+                            <span className="font-bold text-white font-mono">
+                              ₺{stk.unitPrice.toLocaleString('tr-TR')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectStockItem(stk)}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition shrink-0 active:scale-95 shadow-sm shadow-emerald-600/20"
+                        >
+                          Seç & Ekle
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 border-t border-slate-800 bg-slate-950 flex justify-between items-center text-xs">
+              <span className="text-slate-400">
+                {filteredStockItems.length} parça listelendi
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStockPickerOpen(false);
+                  setStockPickerRowIndex(null);
+                }}
+                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
