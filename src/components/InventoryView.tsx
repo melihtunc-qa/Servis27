@@ -76,59 +76,10 @@ export const InventoryView: React.FC = () => {
     return [...Array.from(cats), 'Diğer'];
   }, [stockItems]);
 
-  const getCategoryButtonStyle = (cat: string, isSelected: boolean): string => {
-    switch (cat) {
-      case 'ALL':
-        return isSelected
-          ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-blue-400 hover:border-blue-500/30';
-      case 'Motor Yağı':
-        return isSelected
-          ? 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30';
-      case 'Filtre':
-        return isSelected
-          ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm shadow-cyan-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30';
-      case 'Fren Sistemi':
-        return isSelected
-          ? 'bg-rose-600 text-white border-rose-500 shadow-sm shadow-rose-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30';
-      case 'Sıvı & Katkı':
-      case 'Sıvı & Antifriz':
-        return isSelected
-          ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30';
-      case 'Ateşleme':
-        return isSelected
-          ? 'bg-orange-600 text-white border-orange-500 shadow-sm shadow-orange-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-orange-400 hover:border-orange-500/30';
-      case 'Ön Takım':
-      case 'Ön Takım & Süspansiyon':
-        return isSelected
-          ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30';
-      case 'Aydınlatma & Silecek':
-        return isSelected
-          ? 'bg-yellow-600 text-white border-yellow-500 shadow-sm shadow-yellow-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-yellow-400 hover:border-yellow-500/30';
-      case 'Soğutma & Isıtma':
-        return isSelected
-          ? 'bg-teal-600 text-white border-teal-500 shadow-sm shadow-teal-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-teal-400 hover:border-teal-500/30';
-      case 'Kayış & Rulman':
-        return isSelected
-          ? 'bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-purple-400 hover:border-purple-500/30';
-      case 'Sarf Malzeme':
-        return isSelected
-          ? 'bg-fuchsia-600 text-white border-fuchsia-500 shadow-sm shadow-fuchsia-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-fuchsia-400 hover:border-fuchsia-500/30';
-      default:
-        return isSelected
-          ? 'bg-violet-600 text-white border-violet-500 shadow-sm shadow-violet-600/30'
-          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-violet-400 hover:border-violet-500/30';
-    }
+  const getCategoryButtonStyle = (isSelected: boolean): string => {
+    return isSelected
+      ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30'
+      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-blue-400 hover:border-blue-500/30';
   };
 
   const filteredItems = stockItems.filter(item => {
@@ -259,7 +210,7 @@ export const InventoryView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSelectedCategory('ALL')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ${getCategoryButtonStyle('ALL', selectedCategory === 'ALL')}`}
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ${getCategoryButtonStyle(selectedCategory === 'ALL')}`}
           >
             <Package className="w-3.5 h-3.5" />
             <span>Tüm Kategoriler ({stockItems.length})</span>
@@ -279,7 +230,7 @@ export const InventoryView: React.FC = () => {
             <span>Kritik Stoklar ({lowStockCount})</span>
           </button>
 
-          {/* 3. Individual Category Buttons with subtle distinct color tones */}
+          {/* 3. Individual Category Buttons (Uniform Default Blue) */}
           {availableCategories.map((cat) => {
             const count = stockItems.filter(item => item.category === cat).length;
             const isSelected = selectedCategory === cat;
@@ -288,7 +239,7 @@ export const InventoryView: React.FC = () => {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat)}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ${getCategoryButtonStyle(cat, isSelected)}`}
+                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition shrink-0 ${getCategoryButtonStyle(isSelected)}`}
               >
                 <span>{cat}</span>
                 <span className="text-[10px] opacity-75 font-mono">({count})</span>
