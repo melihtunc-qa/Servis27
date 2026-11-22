@@ -67,22 +67,46 @@ export const RemindersView: React.FC = () => {
   const gecmisCount = reminders.filter(r => getReminderCategory(r) === 'GECMIS').length;
   const tamamlandiCount = reminders.filter(r => getReminderCategory(r) === 'TAMAMLANDI').length;
 
-  const filteredReminders = reminders.filter(rem => {
-    const category = getReminderCategory(rem);
-    const matchesTab = activeTab === 'ALL' || category === activeTab;
-    if (!matchesTab) return false;
+  const filteredReminders = reminders
+    .filter(rem => {
+      const category = getReminderCategory(rem);
+      const matchesTab = activeTab === 'ALL' || category === activeTab;
+      if (!matchesTab) return false;
 
-    if (!searchTerm.trim()) return true;
-    const q = searchTerm.trim().toLowerCase();
-    const vehicle = getVehicle(rem.vehicleId);
-    const customer = getCustomer(rem.customerId);
-    const plate = vehicle?.plate.toLowerCase() || '';
-    const custName = customer?.fullName.toLowerCase() || '';
-    const custPhone = customer?.phone || '';
-    const title = rem.title.toLowerCase();
+      if (!searchTerm.trim()) return true;
+      const q = searchTerm.trim().toLowerCase();
+      const vehicle = getVehicle(rem.vehicleId);
+      const customer = getCustomer(rem.customerId);
+      const plate = vehicle?.plate.toLowerCase() || '';
+      const custName = customer?.fullName.toLowerCase() || '';
+      const custPhone = customer?.phone || '';
+      const title = rem.title.toLowerCase();
 
-    return plate.includes(q) || custName.includes(q) || custPhone.includes(q) || title.includes(q);
-  });
+      return plate.includes(q) || custName.includes(q) || custPhone.includes(q) || title.includes(q);
+    })
+    .sort((a, b) => {
+      // Geçmiş sekmesinde: Bugüne en yakın geçmiş tarihten geriye doğru
+      if (activeTab === 'GECMIS') {
+        const dateA = a.targetDate || '';
+        const dateB = b.targetDate || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        const comp = dateB.localeCompare(dateA);
+        if (comp !== 0) return comp;
+        return (a.targetKm || 0) - (b.targetKm || 0);
+      }
+
+      // Yaklaşan, Tüm Kayıtlar ve Tamamlandı: En yakın tarihten en uzağa doğru (targetDate ascending)
+      const dateA = a.targetDate || '';
+      const dateB = b.targetDate || '';
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      const comp = dateA.localeCompare(dateB);
+      if (comp !== 0) return comp;
+      return (a.targetKm || 0) - (b.targetKm || 0);
+    });
 
   const handleOpenAddModal = () => {
     setEditingReminder(null);

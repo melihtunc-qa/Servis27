@@ -430,6 +430,49 @@ describe('Storage & Repository Integration Tests', () => {
       const stats = storage.getDashboardStats();
       assert.strictEqual(stats.recentReminders.length, 20, 'recentReminders must return up to 20 reminders');
     });
+
+    it('should sort recentReminders by targetDate ascending (nearest date to furthest date)', () => {
+      storage.clearAllData();
+      storage.saveCustomer({ id: 'c-sort-test', fullName: 'Ali Veli', phone: '05551234567', balance: 0, createdAt: new Date().toISOString() });
+      storage.saveVehicle({ id: 'v-sort-test', customerId: 'c-sort-test', plate: '34SRT01', brand: 'Fiat', model: 'Egea', year: 2021, currentKm: 60000, fuelType: 'Dizel', createdAt: new Date().toISOString() });
+
+      // Save reminders in non-chronological order and with newer creation dates for later target dates
+      storage.saveReminder({
+        id: 'rem-far',
+        vehicleId: 'v-sort-test',
+        customerId: 'c-sort-test',
+        type: 'YAG_BAKIMI',
+        title: 'Uzak Bakım',
+        targetDate: '2027-06-01',
+        status: 'YAKLASAN',
+        createdAt: '2026-03-01T10:00:00Z',
+      });
+      storage.saveReminder({
+        id: 'rem-near',
+        vehicleId: 'v-sort-test',
+        customerId: 'c-sort-test',
+        type: 'YAG_BAKIMI',
+        title: 'Yakın Bakım',
+        targetDate: '2026-11-25',
+        status: 'YAKLASAN',
+        createdAt: '2026-01-01T10:00:00Z',
+      });
+      storage.saveReminder({
+        id: 'rem-mid',
+        vehicleId: 'v-sort-test',
+        customerId: 'c-sort-test',
+        type: 'YAG_BAKIMI',
+        title: 'Orta Bakım',
+        targetDate: '2026-12-10',
+        status: 'YAKLASAN',
+        createdAt: '2026-02-01T10:00:00Z',
+      });
+
+      const stats = storage.getDashboardStats();
+      assert.strictEqual(stats.recentReminders[0].id, 'rem-near', 'Nearest targetDate (2026-11-25) must be 1st');
+      assert.strictEqual(stats.recentReminders[1].id, 'rem-mid', 'Middle targetDate (2026-12-10) must be 2nd');
+      assert.strictEqual(stats.recentReminders[2].id, 'rem-far', 'Furthest targetDate (2027-06-01) must be 3rd');
+    });
   });
 
   describe('Backup & Restore (Export / Import)', () => {

@@ -38,7 +38,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const reminders = storage
     .getReminders()
     .filter((r) => r.status === 'YAKLASAN')
-    .sort((a, b) => (a.targetDate || '').localeCompare(b.targetDate || ''))
+    .sort((a, b) => {
+      // En yakın tarihten en uzağa doğru (targetDate ascending)
+      const dateA = a.targetDate || '';
+      const dateB = b.targetDate || '';
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      const comp = dateA.localeCompare(dateB);
+      if (comp !== 0) return comp;
+      return (a.targetKm || 0) - (b.targetKm || 0);
+    })
     .slice(0, 20);
   const vehicles = storage.getVehicles();
   const customers = storage.getCustomers();

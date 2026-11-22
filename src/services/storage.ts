@@ -1048,7 +1048,17 @@ class StorageService {
       totalExpense,
       netCashBalance,
       recentRecords: records.slice(0, 20),
-      recentReminders: reminders.filter(r => r.status === 'YAKLASAN').slice(0, 20),
+      recentReminders: reminders
+        .filter(r => r.status === 'YAKLASAN')
+        .sort((a, b) => {
+          const dateA = a.targetDate || '';
+          const dateB = b.targetDate || '';
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateA.localeCompare(dateB);
+        })
+        .slice(0, 20),
     };
   }
 }
