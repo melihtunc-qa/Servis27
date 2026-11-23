@@ -7,7 +7,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "Servis365",
+    "productName": "Servis27",
     "version": "1.5.0"
   },
   "tauri": {
@@ -28,7 +28,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.servis365.app",
+      "identifier": "com.servis27.app",
       "publisher": "Melih Tunç",
       "copyright": "Copyright © 2026 Melih Tunç. All rights reserved.",
       "icon": [
@@ -44,7 +44,7 @@
     },
     "windows": [
       {
-        "title": "Servis365 - Araç Bakım & Müşteri Takip Sistemi",
+        "title": "Servis27 - Araç Bakım & Müşteri Takip Sistemi",
         "width": 1280,
         "height": 820,
         "minWidth": 1024,

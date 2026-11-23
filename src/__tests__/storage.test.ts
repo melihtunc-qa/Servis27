@@ -374,7 +374,7 @@ describe('Storage & Repository Integration Tests', () => {
         { ...baseRecord, id: 'test-srv-teslim', status: 'TESLIM_EDILDI' as const },
       ];
 
-      localStorage.setItem('servis365_service_records', JSON.stringify(testRecords));
+      localStorage.setItem('servis27_service_records', JSON.stringify(testRecords));
 
       const stats = storage.getDashboardStats();
 

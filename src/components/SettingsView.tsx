@@ -33,7 +33,7 @@ export const SettingsView: React.FC = () => {
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [backupDownloaded, setBackupDownloaded] = useState(false);
   const [isDevUnlocked, setIsDevUnlocked] = useState(() => {
-    return typeof window !== 'undefined' && sessionStorage.getItem('servis365_dev_unlocked') === 'true';
+    return typeof window !== 'undefined' && sessionStorage.getItem('servis27_dev_unlocked') === 'true';
   });
   const [devPasswordInput, setDevPasswordInput] = useState('');
   const [devPasswordError, setDevPasswordError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export const SettingsView: React.FC = () => {
       setIsDevUnlocked(true);
       setDevPasswordError(null);
       setDevPasswordInput('');
-      sessionStorage.setItem('servis365_dev_unlocked', 'true');
+      sessionStorage.setItem('servis27_dev_unlocked', 'true');
     } else {
       setDevPasswordError('Hatalı geliştirici şifresi! Lütfen tekrar deneyiniz.');
     }
@@ -61,7 +61,7 @@ export const SettingsView: React.FC = () => {
     setIsDevUnlocked(false);
     setDevPasswordInput('');
     setDevPasswordError(null);
-    sessionStorage.removeItem('servis365_dev_unlocked');
+    sessionStorage.removeItem('servis27_dev_unlocked');
   };
 
   const handleSeed100Data = () => {
@@ -83,7 +83,7 @@ export const SettingsView: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `servis365_yedek_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `servis27_yedek_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -106,7 +106,7 @@ export const SettingsView: React.FC = () => {
             window.location.reload();
           }, 1200);
         } else {
-          setRestoreError('Hata: Seçilen dosya geçerli bir Servis365 yedeği değil veya bozuk format içeriyor!');
+          setRestoreError('Hata: Seçilen dosya geçerli bir Servis27 yedeği değil veya bozuk format içeriyor!');
         }
       } catch (err) {
         setRestoreError('Hata: Dosya okunurken veya işlenirken bir sorun oluştu.');
@@ -379,7 +379,7 @@ export const SettingsView: React.FC = () => {
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Yazılım:</span>
-                <span className="font-semibold text-slate-200">Servis365 Masaüstü</span>
+                <span className="font-semibold text-slate-200">Servis27 Masaüstü</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Sürüm:</span>
@@ -600,7 +600,7 @@ export const SettingsView: React.FC = () => {
                   Geri Yüklenecek Yedek Dosyasını (.json) Seçin
                 </span>
                 <p className="text-[11px] text-slate-400">
-                  Önceden indirilmiş geçerli Servis365 yedek dosyanızı seçerek yükleme işlemini başlatın.
+                  Önceden indirilmiş geçerli Servis27 yedek dosyanızı seçerek yükleme işlemini başlatın.
                 </p>
 
                 <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-md shadow-emerald-600/20 active:scale-98">

@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="font-bold text-lg text-white tracking-wide leading-none">Servis365</h1>
+          <h1 className="font-bold text-lg text-white tracking-wide leading-none">Servis27</h1>
           <span className="text-xs text-blue-400 font-medium">Oto Bakım & Müşteri Takip</span>
         </div>
       </div>
