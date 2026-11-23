@@ -1,47 +1,15 @@
 {
-  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Servis27",
+  "version": "1.5.0",
+  "identifier": "com.servis27.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist"
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "Servis27",
-    "version": "1.5.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "fs": {
-        "all": true,
-        "scope": ["$APP/*", "$DESKTOP/*"]
-      },
-      "dialog": {
-        "all": true
-      },
-      "shell": {
-        "all": false,
-        "open": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.servis27.app",
-      "publisher": "Melih Tunç",
-      "copyright": "Copyright © 2026 Melih Tunç. All rights reserved.",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "app": {
     "windows": [
       {
         "title": "Servis27 - Araç Bakım & Müşteri Takip Sistemi",
@@ -53,7 +21,22 @@
         "fullscreen": false,
         "center": true
       }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "Melih Tunç",
+    "copyright": "Copyright © 2026 Melih Tunç. All rights reserved.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ]
   }
 }
-
