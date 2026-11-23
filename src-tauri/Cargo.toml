@@ -1,0 +1,20 @@
+[package]
+name = "servis27"
+version = "1.5.0"
+description = "Servis27 - Araç Bakım & Müşteri Takip Sistemi"
+authors = ["Melih Tunç"]
+license = ""
+repository = "https://github.com/melihtunc-qa/Servis27"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = ["dialog-all", "fs-all", "shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
