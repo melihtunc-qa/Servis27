@@ -7,22 +7,33 @@ import type { Customer, Vehicle, ServiceRecord, ShopSettings } from '../types/in
 describe('Storage & Repository Integration Tests', () => {
   beforeEach(() => {
     clearStorage();
-    // Re-initialize storage to default demo data
-    (storage as any).initStorage();
+    // Re-initialize storage with demo fixtures for CRUD/integration tests
+    storage.resetToFactoryDefaults();
   });
 
   describe('Initial Repository Initialization', () => {
-    it('should initialize repository with baseline default entities', () => {
+    it('should initialize repository with completely empty data by default', () => {
+      clearStorage();
+      (storage as any).initStorage();
+
       const customers = storage.getCustomers();
       const vehicles = storage.getVehicles();
       const records = storage.getServiceRecords();
       const reminders = storage.getReminders();
+      const stockItems = storage.getStockItems();
+      const cashTransactions = storage.getCashTransactions();
+      const technicians = storage.getTechnicians();
+      const packages = storage.getPackages();
       const settings = storage.getSettings();
 
-      assert.ok(customers.length >= 3, 'Default customers should be loaded');
-      assert.ok(vehicles.length >= 3, 'Default vehicles should be loaded');
-      assert.ok(records.length >= 2, 'Default records should be loaded');
-      assert.ok(reminders.length >= 2, 'Default reminders should be loaded');
+      assert.equal(customers.length, 0, 'Customers should start empty');
+      assert.equal(vehicles.length, 0, 'Vehicles should start empty');
+      assert.equal(records.length, 0, 'Service records should start empty');
+      assert.equal(reminders.length, 0, 'Reminders should start empty');
+      assert.equal(stockItems.length, 0, 'Stock items should start empty');
+      assert.equal(cashTransactions.length, 0, 'Cash transactions should start empty');
+      assert.equal(technicians.length, 0, 'Technicians should start empty');
+      assert.equal(packages.length, 0, 'Packages should start empty');
       assert.equal(settings.shopName, defaultSettings.shopName);
       assert.equal(settings.defaultOilPeriodKm, 10000);
       assert.equal(settings.defaultOilPeriodDays, 365);

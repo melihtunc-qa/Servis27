@@ -34,16 +34,16 @@ const STORAGE_KEYS = {
 };
 
 export const defaultSettings: ShopSettings = {
-  shopName: 'GÜVEN OTO BAKIM VE SERVİS',
-  ownerName: 'Usta Ali Güven',
-  phone: '0532 555 12 34',
-  address: 'Oto Sanayi Sitesi 4. Blok No: 28',
-  city: 'İstanbul',
-  taxOffice: 'Maslak V.D.',
-  taxNumber: '1234567890',
+  shopName: '',
+  ownerName: '',
+  phone: '',
+  address: '',
+  city: '',
+  taxOffice: '',
+  taxNumber: '',
   defaultOilPeriodKm: 10000,
   defaultOilPeriodDays: 365,
-  footerNote: 'Tüm parça ve işçiliklerimiz 6 ay / 10.000 KM Güven Oto garantisindedir. Bizi tercih ettiğiniz için teşekkür ederiz.',
+  footerNote: '',
 };
 
 // Initial Technicians
@@ -338,31 +338,31 @@ class StorageService {
     }
 
     if (localStorage.getItem(STORAGE_KEYS.CUSTOMERS) === null) {
-      localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(initialCustomers));
+      localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.VEHICLES) === null) {
-      localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(initialVehicles));
+      localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.SERVICE_RECORDS) === null) {
-      localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(initialRecords));
+      localStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.REMINDERS) === null) {
-      localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(initialReminders));
+      localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.SETTINGS) === null) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
     }
     if (localStorage.getItem(STORAGE_KEYS.STOCK_ITEMS) === null) {
-      localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify(initialStockItems));
+      localStorage.setItem(STORAGE_KEYS.STOCK_ITEMS, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.PACKAGES) === null) {
-      localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(initialPackages));
+      localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.TECHNICIANS) === null) {
-      localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify(initialTechnicians));
+      localStorage.setItem(STORAGE_KEYS.TECHNICIANS, JSON.stringify([]));
     }
     if (localStorage.getItem(STORAGE_KEYS.CASH_TRANSACTIONS) === null) {
-      localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify(initialCashTransactions));
+      localStorage.setItem(STORAGE_KEYS.CASH_TRANSACTIONS, JSON.stringify([]));
     }
   }
 

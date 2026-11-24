@@ -6,7 +6,7 @@ import type { ServiceRecord, Customer, Vehicle, StockItem } from '../types/index
 describe('Service Record Update & End-to-End Integration Tests', () => {
   beforeEach(() => {
     localStorage.clear();
-    (storage as any).initStorage();
+    storage.resetToFactoryDefaults();
   });
 
   describe('Financial & Customer Balance Updates on Service Edit', () => {

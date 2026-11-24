@@ -7,7 +7,7 @@ import type { CashTransaction, ServiceRecord } from '../types/index.ts';
 describe('Cash Flow & Register Transactions Tests', () => {
   beforeEach(() => {
     clearStorage();
-    (storage as any).initStorage();
+    storage.resetToFactoryDefaults();
   });
 
   describe('Cash Transactions Repository CRUD', () => {

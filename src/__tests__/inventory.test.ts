@@ -7,7 +7,7 @@ import type { StockItem, ServiceRecord } from '../types/index.ts';
 describe('Inventory & Spare Parts Stock Management Tests', () => {
   beforeEach(() => {
     clearStorage();
-    (storage as any).initStorage();
+    storage.resetToFactoryDefaults();
   });
 
   describe('Stock Item CRUD Operations', () => {

@@ -6,8 +6,8 @@ import type { ServiceRecord, StockItem, Reminder } from '../types/index.ts';
 describe('Real-Time Storage Event Reactivity & Badge Trigger Tests', () => {
   beforeEach(() => {
     localStorage.clear();
-    // Re-initialize storage
-    (storage as any).initStorage();
+    // Re-initialize storage with demo fixtures
+    storage.resetToFactoryDefaults();
   });
 
   it('should notify subscriber when a new service record is created', () => {

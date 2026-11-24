@@ -80,6 +80,7 @@ describe('Plate Normalization & Search Tests', () => {
 
   describe('Storage Vehicle Plate Search Integration', () => {
     it('should find vehicles using storage.getVehicleByPlate with various inputs', () => {
+      storage.resetToFactoryDefaults();
       // veh-1 has plate '34VR4821'
       const foundDirect = storage.getVehicleByPlate('34VR4821');
       assert.ok(foundDirect);
@@ -139,6 +140,7 @@ describe('Plate Normalization & Search Tests', () => {
     });
 
     it('should support searchVehiclesByPlate contain/substring queries from storage', () => {
+      storage.resetToFactoryDefaults();
       // Searching 'VR' in storage
       const vrMatches = storage.searchVehiclesByPlate('VR');
       assert.ok(vrMatches.length >= 2, 'Should find at least 2 vehicles with VR');
