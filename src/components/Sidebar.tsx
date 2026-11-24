@@ -7,7 +7,6 @@ import {
   Bell, 
   Settings, 
   PlusCircle, 
-  ShieldCheck,
   Search,
   Package,
   Wallet
@@ -84,9 +83,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-72 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none no-print">
       {/* Brand Header */}
       <div className="p-4 border-b border-slate-800 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <ShieldCheck className="w-6 h-6 text-white" />
-        </div>
+        <img
+          src="/icon.png"
+          alt="Servis27"
+          className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20 object-cover shrink-0"
+        />
         <div>
           <h1 className="font-bold text-lg text-white tracking-wide leading-none">Servis27</h1>
           <span className="text-xs text-blue-400 font-medium">Oto Bakım & Müşteri Takip</span>
