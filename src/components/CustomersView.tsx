@@ -15,6 +15,7 @@ import {
 import { storage } from '../services/storage';
 import { Customer, Vehicle, ServiceRecord } from '../types';
 import { useModal } from '../context/ModalContext';
+import { openExternalUrl } from '../utils/desktop';
 
 interface CustomersViewProps {
   onSelectVehicle: (vehicle: Vehicle) => void;
@@ -163,7 +164,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     const settings = storage.getSettings();
     const message = `Merhaba ${name} Bey/Hanım, ${settings.shopName} servisimizden ulaşıyoruz. Aracınız ile ilgili bilgi vermek istiyoruz.`;
     const url = storage.generateWhatsAppLink(phone, message);
-    window.open(url, '_blank');
+    void openExternalUrl(url);
   };
 
   return (

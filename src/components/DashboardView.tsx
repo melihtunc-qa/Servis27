@@ -13,6 +13,7 @@ import { storage } from '../services/storage';
 import { ServiceRecord, Customer, Vehicle, Reminder } from '../types';
 import { NavTab } from './Sidebar';
 import { useModal } from '../context/ModalContext';
+import { openExternalUrl } from '../utils/desktop';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
@@ -81,7 +82,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const settings = storage.getSettings();
     const message = `Merhaba, ${settings.shopName} servisimizden yazıyoruz. ${plate} plakalı aracınızın ${reminder.title} zamanı yaklaşmıştır. Randevu ve detaylı bilgi için bize bu numaradan ulaşabilirsiniz.`;
     const url = storage.generateWhatsAppLink(phone, message);
-    window.open(url, '_blank');
+    void openExternalUrl(url);
   };
 
   const getStatusBadge = (status: ServiceRecord['status']) => {

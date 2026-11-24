@@ -17,6 +17,7 @@ import {
 import { storage } from '../services/storage';
 import { Reminder, ReminderType, ReminderStatus, Vehicle, Customer } from '../types';
 import { useModal } from '../context/ModalContext';
+import { openExternalUrl } from '../utils/desktop';
 
 export type ReminderFilterTab = 'ALL' | 'YAKLASAN' | 'GECMIS' | 'TAMAMLANDI';
 
@@ -150,7 +151,7 @@ export const RemindersView: React.FC = () => {
     text += `gelmiştir.\nRandevu oluşturmak veya bilgi almak için bu numaradan bizimle iletişime geçebilirsiniz.`;
 
     const url = storage.generateWhatsAppLink(customer.phone, text);
-    window.open(url, '_blank');
+    void openExternalUrl(url);
 
     // Update status to BILDIRILDI
     storage.saveReminder({ ...rem, status: 'BILDIRILDI' });

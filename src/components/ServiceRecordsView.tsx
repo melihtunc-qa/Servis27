@@ -22,6 +22,7 @@ import {
 import { storage } from '../services/storage';
 import { ServiceRecord, ServiceItem, ServiceStatus, PaymentStatus, Vehicle, Customer, StockItem, ItemType } from '../types';
 import { useModal } from '../context/ModalContext';
+import { openExternalUrl } from '../utils/desktop';
 
 interface ServiceRecordsViewProps {
   onOpenNewService: () => void;
@@ -354,7 +355,7 @@ export const ServiceRecordsView: React.FC<ServiceRecordsViewProps> = ({
     msg += `\nİyi günler dileriz.`;
 
     const url = storage.generateWhatsAppLink(customer.phone, msg);
-    window.open(url, '_blank');
+    void openExternalUrl(url);
   };
 
   const triggerPrint = (mode: 'A4' | 'THERMAL') => {

@@ -22,6 +22,7 @@ import {
 import { storage, defaultSettings } from '../services/storage';
 import { ShopSettings } from '../types';
 import { useModal } from '../context/ModalContext';
+import { saveBackupFile } from '../utils/desktop';
 
 export const SettingsView: React.FC = () => {
   const { confirm } = useModal();
@@ -77,17 +78,26 @@ export const SettingsView: React.FC = () => {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  const handleExportBackup = () => {
-    const backupJson = storage.exportBackup();
-    const blob = new Blob([backupJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `servis27_yedek_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExportBackup = async (): Promise<boolean> => {
+    try {
+      const backupJson = storage.exportBackup();
+      const defaultName = `servis27_yedek_${new Date().toISOString().split('T')[0]}.json`;
+      const result = await saveBackupFile(defaultName, backupJson);
+      if (result.saved) {
+        setImportStatus(
+          result.path
+            ? `✓ Yedek başarıyla kaydedildi: ${result.path}`
+            : '✓ Veritabanı yedeği başarıyla indirildi.'
+        );
+        setTimeout(() => setImportStatus(null), 5000);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      setImportStatus('Hata: Yedek dosyası kaydedilemedi.');
+      setTimeout(() => setImportStatus(null), 5000);
+      return false;
+    }
   };
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -582,9 +592,9 @@ export const SettingsView: React.FC = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    handleExportBackup();
-                    setBackupDownloaded(true);
+                  onClick={async () => {
+                    const saved = await handleExportBackup();
+                    if (saved) setBackupDownloaded(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition shadow-sm active:scale-98"
                 >
